@@ -63,6 +63,27 @@
       color: var(--header-text-color);
       transition: background 0.35s ease, color 0.35s ease;
     }
+    /* Header Bar 底部漸層暈光燈帶 */
+    .ceremony-header-bar::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--theme-accent) 45%, transparent) 18%,
+        var(--theme-accent-bright) 50%,
+        color-mix(in srgb, var(--theme-accent) 45%, transparent) 82%,
+        transparent 100%
+      );
+      box-shadow:
+        0 0 10px color-mix(in srgb, var(--theme-accent-bright) 85%, transparent),
+        0 2px 20px color-mix(in srgb, var(--theme-accent) 65%, transparent);
+      pointer-events: none;
+    }
 
     /* 獨立主要按鈕樣式 */
     .ceremony-primary-btn {
@@ -116,7 +137,7 @@
 <body class="min-h-screen flex flex-col">
 
   <!-- 頂部典禮導覽列 (手機版採用右上角漢堡選單，徹底避免與同步狀態遮擋) -->
-  <header class="ceremony-header-bar border-b ceremony-accent-border sticky top-0 z-40 shadow-lg">
+  <header class="ceremony-header-bar relative sticky top-0 z-40 shadow-lg">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
       <!-- 左側：活動 Logo / 品牌圖示、典禮標題與 Firebase 雲端即時同步狀態 -->
       <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
