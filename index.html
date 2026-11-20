@@ -1652,7 +1652,7 @@
           ...appState.drinks.map(d => {
             const occupiedIdx = localGuestSlots.indexOf(d.id);
             const isCurrent = d.id === assignedDrinkId;
-            const statusHint = (!isCurrent && occupiedIdx !== -1) ? ` (目前第${occupiedIdx + 1}名 · 選取將自動對調)` : '';
+            const statusHint = (!isCurrent && occupiedIdx !== -1) ? ` (目前第${occupiedIdx + 1}名)` : '';
             return `<option value="${d.id}" ${isCurrent ? 'selected' : ''}>${escapeHtml(d.icon || '🥤')} ${escapeHtml(d.name)}${statusHint}</option>`;
           })
         ].join('');
