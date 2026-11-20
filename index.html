@@ -118,10 +118,13 @@
   <!-- 頂部典禮導覽列 (手機版採用右上角漢堡選單，徹底避免與同步狀態遮擋) -->
   <header class="ceremony-header-bar border-b ceremony-accent-border sticky top-0 z-40 shadow-lg">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
-      <!-- 左側：品牌圖示、典禮標題與 Firebase 雲端即時同步狀態 -->
+      <!-- 左側：活動 Logo / 品牌圖示、典禮標題與 Firebase 雲端即時同步狀態 -->
       <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl gold-gradient-bg flex items-center justify-center text-slate-950 shadow-md shrink-0">
+        <div id="header-default-icon-box" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl gold-gradient-bg flex items-center justify-center text-slate-950 shadow-md shrink-0">
           <i class="fa-solid fa-trophy text-base sm:text-lg"></i>
+        </div>
+        <div id="header-custom-logo-box" class="hidden w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/95 p-0.5 flex items-center justify-center shadow-md shrink-0 overflow-hidden border border-white/30">
+          <img id="header-custom-logo-img" src="" alt="活動 Logo" class="w-full h-full object-contain rounded-lg" />
         </div>
         <div class="min-w-0 flex-1">
           <h1 id="header-event-title" class="font-serif-title font-bold text-sm sm:text-xl tracking-wide truncate leading-tight">
@@ -696,6 +699,36 @@
                   <input type="text" id="admin-event-title-input" onchange="saveGeneralSettings()"
                     class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-sm font-bold text-slate-900">
                 </div>
+                <div class="sm:col-span-2 bg-stone-50 p-3 rounded-xl border border-stone-200">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs font-bold text-slate-700">
+                      <i class="fa-solid fa-image text-amber-600 mr-1"></i>活動左上角專屬 Logo
+                    </label>
+                    <span class="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
+                      建議尺寸：200 × 200 px（1:1 正方形）
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl border border-slate-300 bg-white flex items-center justify-center overflow-hidden shrink-0">
+                      <img id="admin-logo-preview" src="" alt="Logo 預覽" class="hidden w-full h-full object-contain p-1">
+                      <i id="admin-logo-placeholder" class="fa-solid fa-trophy text-amber-500 text-lg"></i>
+                    </div>
+                    <div class="flex-1 min-w-0 space-y-1.5">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <label class="px-3 py-1.5 rounded-lg ceremony-primary-btn text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 shadow-sm">
+                          <i class="fa-solid fa-upload"></i>
+                          <span>上傳 Logo 圖片</span>
+                          <input type="file" id="admin-logo-file-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" onchange="handleLogoUpload(event)" class="hidden">
+                        </label>
+                        <button type="button" onclick="removeCustomLogo()" id="btn-remove-logo"
+                          class="hidden px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-600 hover:text-red-600 text-xs font-semibold">
+                          恢復預設獎盃
+                        </button>
+                      </div>
+                      <p class="text-[11px] text-slate-500">支援 PNG（透明背景最佳）、JPG、WebP；系統會自動壓縮為 200×200 px 並同步至全場手機</p>
+                    </div>
+                  </div>
+                </div>
                 <div>
                   <label class="block text-xs font-semibold text-slate-600 mb-1">完全猜中名次（分）</label>
                   <input type="number" id="score-exact" value="100" onchange="saveGeneralSettings()"
@@ -1031,6 +1064,7 @@
 
     const INITIAL_STATE = {
       eventTitle: '金萃大賞｜年度飲品頒獎典禮',
+      eventLogo: '',
       isLocked: false,
       drinks: JSON.parse(JSON.stringify(DEFAULT_DRINKS)),
       officialRanks: ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'],
@@ -1228,6 +1262,7 @@
         try {
           await update(ceremonyRootRef, {
             eventTitle: newState.eventTitle,
+            eventLogo: newState.eventLogo || '',
             isLocked: newState.isLocked,
             drinks: newState.drinks,
             officialRanks: newState.officialRanks,
@@ -1413,6 +1448,38 @@
     function renderAllViews() {
       const title = appState.eventTitle || INITIAL_STATE.eventTitle;
       document.getElementById('header-event-title').textContent = title;
+      // 同步左上角自訂 Logo 或預設冠軍獎盃
+      const logoData = appState.eventLogo || '';
+      const defaultIconBox = document.getElementById('header-default-icon-box');
+      const customLogoBox = document.getElementById('header-custom-logo-box');
+      const customLogoImg = document.getElementById('header-custom-logo-img');
+      if (logoData) {
+        defaultIconBox.classList.add('hidden');
+        customLogoBox.classList.remove('hidden');
+        customLogoImg.src = logoData;
+      } else {
+        defaultIconBox.classList.remove('hidden');
+        customLogoBox.classList.add('hidden');
+        customLogoImg.src = '';
+      }
+
+      // 同步後台 Logo 預覽圖
+      const adminPreview = document.getElementById('admin-logo-preview');
+      const adminPlaceholder = document.getElementById('admin-logo-placeholder');
+      const removeLogoBtn = document.getElementById('btn-remove-logo');
+      if (adminPreview && adminPlaceholder && removeLogoBtn) {
+        if (logoData) {
+          adminPreview.src = logoData;
+          adminPreview.classList.remove('hidden');
+          adminPlaceholder.classList.add('hidden');
+          removeLogoBtn.classList.remove('hidden');
+        } else {
+          adminPreview.src = '';
+          adminPreview.classList.add('hidden');
+          adminPlaceholder.classList.remove('hidden');
+          removeLogoBtn.classList.add('hidden');
+        }
+      }
       const stageTitleEl = document.getElementById('stage-title');
       if (stageTitleEl) stageTitleEl.textContent = title;
       const qrTitleEl = document.getElementById('qr-modal-event-title');
@@ -2518,7 +2585,48 @@
       await persistConfigState(nextState);
       if (showNotification) showToast('活動標題與計分規則已儲存！', 'success');
     };
+    // 上傳活動 Logo（自動縮放最佳化為 200x200 px 並同步至雲端）
+    window.handleLogoUpload = function(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
 
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = async function() {
+          const size = 200; // 統一輸出為 200x200 px
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+
+          // 等比例置中繪製，保留透明背景
+          const scale = Math.min(size / img.width, size / img.height);
+          const drawW = img.width * scale;
+          const drawH = img.height * scale;
+          const offsetX = (size - drawW) / 2;
+          const offsetY = (size - drawH) / 2;
+          ctx.clearRect(0, 0, size, size);
+          ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+
+          const compressedDataUrl = canvas.toDataURL('image/png', 0.9);
+          const nextState = JSON.parse(JSON.stringify(appState));
+          nextState.eventLogo = compressedDataUrl;
+          await persistConfigState(nextState);
+          showToast('活動 Logo（200×200 px）已上傳並同步至全場畫面！', 'success');
+          event.target.value = '';
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.removeCustomLogo = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.eventLogo = '';
+      await persistConfigState(nextState);
+      showToast('已恢復為預設冠軍獎盃圖示', 'info');
+    };
     window.generateMockPlayers = async function() {
       const mockNames = [
         'VIP桌-林經理', '茶飲達人小美', '波霸控阿傑', 'A3桌-陳總監',
