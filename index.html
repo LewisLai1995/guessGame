@@ -1565,6 +1565,7 @@
       if (isAdminAuthenticated) {
         renderAdminView(leaderboard, maxBaseScore);
       }
+      updateCountdownDisplay();
     }
 
     // =========================================================================
@@ -2974,6 +2975,8 @@
       applyThemeStyles(appState.theme);
       switchView('guest');
       initFirebaseSync();
+      updateCountdownDisplay();
+      setInterval(updateCountdownDisplay, 1000);
     });
   </script>
 </body>
