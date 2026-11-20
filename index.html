@@ -2461,18 +2461,68 @@
       if (typeof QRious === 'function') {
         canvas.classList.remove('hidden');
         fallbackImg.classList.add('hidden');
+
+        const qrSize = 230;
         new QRious({
           element: canvas,
           value: targetUrl,
-          size: 210,
-          level: 'M',
+          size: qrSize,
+          level: 'H', // 提高至最高容錯率 (30%)，確保中央放 Logo 後手機仍可秒掃
           foreground: '#0F172A',
           background: '#FFFFFF'
         });
+
+        // 在 QR Code 畫布正中央疊加圓角白底與活動 Logo
+        const ctx = canvas.getContext('2d');
+        const badgeSize = Math.round(qrSize * 0.24); // 約佔 24% 寬度，落在安全容錯範圍內
+        const centerPos = (qrSize - badgeSize) / 2;
+        const radius = 10;
+
+        const drawCenterBadge = () => {
+          ctx.save();
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(centerPos, centerPos, badgeSize, badgeSize, radius);
+          } else {
+            ctx.rect(centerPos, centerPos, badgeSize, badgeSize);
+          }
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = appState.theme?.accent || '#D4AF37';
+          ctx.stroke();
+          ctx.restore();
+        };
+
+        const logoData = appState.eventLogo || '';
+        if (logoData) {
+          const logoImg = new Image();
+          logoImg.onload = function () {
+            drawCenterBadge();
+            const pad = 5;
+            ctx.drawImage(
+              logoImg,
+              centerPos + pad,
+              centerPos + pad,
+              badgeSize - pad * 2,
+              badgeSize - pad * 2
+            );
+          };
+          logoImg.src = logoData;
+        } else {
+          // 尚未上傳自訂 Logo 時，繪製預設金色獎盃徽章
+          drawCenterBadge();
+          ctx.save();
+          ctx.font = '24px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('🏆', qrSize / 2, qrSize / 2 + 1);
+          ctx.restore();
+        }
       } else {
         canvas.classList.add('hidden');
         fallbackImg.classList.remove('hidden');
-        fallbackImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=210x210&data=${encodeURIComponent(targetUrl)}`;
+        fallbackImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=230x230&ecc=H&data=${encodeURIComponent(targetUrl)}`;
       }
     }
 
