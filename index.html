@@ -84,6 +84,46 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
     ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.55); border-radius: 9999px; }
+  /* === 獨立區域配色控制 === */
+body.custom-theme-active {
+  background: var(--page-bg) !important;
+  background-attachment: fixed !important;
+  min-height: 100vh;
+}
+
+/* 獨立 Header Bar 樣式 */
+header, nav, .top-header, [data-role="header-bar"] {
+  background: var(--header-bg, rgba(15, 23, 42, 0.85)) !important;
+  color: var(--header-text, #ffffff) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+header *, nav *, .top-header * {
+  color: inherit;
+}
+
+/* 獨立主要按鈕樣式 */
+button.btn-primary-theme,
+.primary-action-btn,
+button[type="submit"],
+#submitVoteBtn,
+#revealNextBtn,
+#applyBonusBtn,
+#addDrinkBtn {
+  background: var(--btn-bg, #d97706) !important;
+  color: var(--btn-text, #ffffff) !important;
+  border: none !important;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+button.btn-primary-theme:hover,
+.primary-action-btn:hover,
+#submitVoteBtn:hover,
+#revealNextBtn:hover,
+#applyBonusBtn:hover {
+  filter: brightness(1.08);
+}
+  
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -2306,5 +2346,173 @@
       initSyncEngine();
     });
   </script>
+  <script>
+(function () {
+  // 1. 建立獨立三區配色控制面板 HTML
+  const panelHTML = `
+    <div id="customThemePanel" style="background: rgba(15, 23, 42, 0.75); color: #f8fafc; border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 18px; margin: 16px 0; text-align: left; box-shadow: 0 8px 24px rgba(0,0,0,0.25);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700;">🎨 獨立三區主題配色（背景 / Header / 按鈕）</h3>
+        <button type="button" onclick="resetThreePartTheme()" style="background:rgba(255,255,255,0.15); color:#fff; border:none; padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer;">重設預設色</button>
+      </div>
+
+      <!-- 1. 頁面背景 -->
+      <div style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.12);">
+        <div style="font-weight: 600; margin-bottom: 6px; font-size: 14px;">1. 頁面背景（Page Background）</div>
+        <label style="margin-right: 12px; font-size: 13px;"><input type="radio" name="pageBgMode" value="solid" onchange="applyThreePartTheme()"> 單色</label>
+        <label style="font-size: 13px;"><input type="radio" name="pageBgMode" value="gradient" checked onchange="applyThreePartTheme()"> 雙色漸層</label>
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px; flex-wrap: wrap; font-size: 13px;">
+          <label>主色 <input type="color" id="pageBgColor1" value="#064e3b" oninput="applyThreePartTheme()"></label>
+          <label id="pageBgColor2Wrap">副色 <input type="color" id="pageBgColor2" value="#022c22" oninput="applyThreePartTheme()"></label>
+          <label id="pageBgAngleWrap">角度
+            <select id="pageBgAngle" onchange="applyThreePartTheme()" style="color:#111; background:#fff; padding:2px 6px; border-radius:4px;">
+              <option value="135deg">135° 對角</option>
+              <option value="180deg">180° 上下</option>
+              <option value="90deg">90° 左右</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <!-- 2. Header Bar -->
+      <div style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.12);">
+        <div style="font-weight: 600; margin-bottom: 6px; font-size: 14px;">2. 頂部導覽列（Header Bar）</div>
+        <label style="margin-right: 12px; font-size: 13px;"><input type="radio" name="headerBgMode" value="solid" checked onchange="applyThreePartTheme()"> 單色</label>
+        <label style="font-size: 13px;"><input type="radio" name="headerBgMode" value="gradient" onchange="applyThreePartTheme()"> 雙色漸層</label>
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px; flex-wrap: wrap; font-size: 13px;">
+          <label>底色1 <input type="color" id="headerColor1" value="#0f172a" oninput="applyThreePartTheme()"></label>
+          <label id="headerColor2Wrap" style="display:none;">底色2 <input type="color" id="headerColor2" value="#1e293b" oninput="applyThreePartTheme()"></label>
+          <label>文字色 <input type="color" id="headerTextColor" value="#ffffff" oninput="applyThreePartTheme()"></label>
+        </div>
+      </div>
+
+      <!-- 3. 主要按鈕 -->
+      <div>
+        <div style="font-weight: 600; margin-bottom: 6px; font-size: 14px;">3. 主要按鈕（Buttons）</div>
+        <label style="margin-right: 12px; font-size: 13px;"><input type="radio" name="btnBgMode" value="solid" checked onchange="applyThreePartTheme()"> 單色</label>
+        <label style="font-size: 13px;"><input type="radio" name="btnBgMode" value="gradient" onchange="applyThreePartTheme()"> 雙色漸層</label>
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px; flex-wrap: wrap; font-size: 13px;">
+          <label>按鈕色1 <input type="color" id="btnColor1" value="#d97706" oninput="applyThreePartTheme()"></label>
+          <label id="btnColor2Wrap" style="display:none;">按鈕色2 <input type="color" id="btnColor2" value="#f59e0b" oninput="applyThreePartTheme()"></label>
+          <label>按鈕字色 <input type="color" id="btnTextColor" value="#ffffff" oninput="applyThreePartTheme()"></label>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 2. 自動尋找後台區塊並插入面板（找不到時自動附在後台最上方）
+  function injectThemePanel() {
+    if (document.getElementById('customThemePanel')) return;
+    const candidates = Array.from(document.querySelectorAll('div, section'));
+    // 優先找原本包含「主題配色」或「飲品」設定的後台卡片
+    const target = candidates.find(el =>
+      el.offsetParent !== null &&
+      (el.textContent.includes('主題配色') || el.textContent.includes('產生 8 位模擬來賓') || el.textContent.includes('鎖定預測'))
+    );
+    if (target) {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = panelHTML;
+      target.parentNode.insertBefore(wrapper.firstElementChild, target);
+      loadSavedThreePartTheme();
+    }
+  }
+
+  // 3. 套用三區顏色
+  window.applyThreePartTheme = function (save = true) {
+    const panel = document.getElementById('customThemePanel');
+    if (!panel) return;
+    const root = document.documentElement;
+    document.body.classList.add('custom-theme-active');
+
+    const pageMode = panel.querySelector('input[name="pageBgMode"]:checked')?.value || 'gradient';
+    const p1 = document.getElementById('pageBgColor1').value;
+    const p2 = document.getElementById('pageBgColor2').value;
+    const pAngle = document.getElementById('pageBgAngle').value;
+    document.getElementById('pageBgColor2Wrap').style.display = pageMode === 'gradient' ? 'inline-block' : 'none';
+    document.getElementById('pageBgAngleWrap').style.display = pageMode === 'gradient' ? 'inline-block' : 'none';
+    root.style.setProperty('--page-bg', pageMode === 'gradient' ? `linear-gradient(${pAngle}, ${p1}, ${p2})` : p1);
+
+    const headerMode = panel.querySelector('input[name="headerBgMode"]:checked')?.value || 'solid';
+    const h1 = document.getElementById('headerColor1').value;
+    const h2 = document.getElementById('headerColor2').value;
+    const hText = document.getElementById('headerTextColor').value;
+    document.getElementById('headerColor2Wrap').style.display = headerMode === 'gradient' ? 'inline-block' : 'none';
+    root.style.setProperty('--header-bg', headerMode === 'gradient' ? `linear-gradient(90deg, ${h1}, ${h2})` : h1);
+    root.style.setProperty('--header-text', hText);
+
+    const btnMode = panel.querySelector('input[name="btnBgMode"]:checked')?.value || 'solid';
+    const b1 = document.getElementById('btnColor1').value;
+    const b2 = document.getElementById('btnColor2').value;
+    const bText = document.getElementById('btnTextColor').value;
+    document.getElementById('btnColor2Wrap').style.display = btnMode === 'gradient' ? 'inline-block' : 'none';
+    root.style.setProperty('--btn-bg', btnMode === 'gradient' ? `linear-gradient(135deg, ${b1}, ${b2})` : b1);
+    root.style.setProperty('--btn-text', bText);
+
+    document.querySelectorAll('button').forEach(btn => {
+      if (btn.closest('#customThemePanel')) return;
+      const txt = btn.textContent || '';
+      if (/送出|揭曉|加分|新增|儲存|套用|產生|鎖定|解除/.test(txt)) {
+        btn.classList.add('btn-primary-theme');
+      }
+    });
+
+    if (save) {
+      localStorage.setItem('customThreePartTheme', JSON.stringify({
+        pageMode, p1, p2, pAngle, headerMode, h1, h2, hText, btnMode, b1, b2, bText
+      }));
+    }
+  };
+
+  window.resetThreePartTheme = function () {
+    localStorage.removeItem('customThreePartTheme');
+    document.body.classList.remove('custom-theme-active');
+    location.reload();
+  };
+
+  function loadSavedThreePartTheme() {
+    const saved = localStorage.getItem('customThreePartTheme');
+    if (!saved) return;
+    try {
+      const t = JSON.parse(saved);
+      const panel = document.getElementById('customThemePanel');
+      if (!panel) return;
+      panel.querySelector(`input[name="pageBgMode"][value="${t.pageMode}"]`).checked = true;
+      document.getElementById('pageBgColor1').value = t.p1;
+      document.getElementById('pageBgColor2').value = t.p2;
+      document.getElementById('pageBgAngle').value = t.pAngle;
+      panel.querySelector(`input[name="headerBgMode"][value="${t.headerMode}"]`).checked = true;
+      document.getElementById('headerColor1').value = t.h1;
+      document.getElementById('headerColor2').value = t.h2;
+      document.getElementById('headerTextColor').value = t.hText;
+      panel.querySelector(`input[name="btnBgMode"][value="${t.btnMode}"]`).checked = true;
+      document.getElementById('btnColor1').value = t.b1;
+      document.getElementById('btnColor2').value = t.b2;
+      document.getElementById('btnTextColor').value = t.bText;
+      applyThreePartTheme(false);
+    } catch (e) {}
+  }
+
+  // 一進頁面就先還原背景/Header/按鈕顏色（即使還沒進後台也生效）
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('customThreePartTheme');
+    if (saved) {
+      try {
+        const t = JSON.parse(saved);
+        const root = document.documentElement;
+        document.body.classList.add('custom-theme-active');
+        root.style.setProperty('--page-bg', t.pageMode === 'gradient' ? `linear-gradient(${t.pAngle}, ${t.p1}, ${t.p2})` : t.p1);
+        root.style.setProperty('--header-bg', t.headerMode === 'gradient' ? `linear-gradient(90deg, ${t.h1}, ${t.h2})` : t.h1);
+        root.style.setProperty('--header-text', t.hText);
+        root.style.setProperty('--btn-bg', t.btnMode === 'gradient' ? `linear-gradient(135deg, ${t.b1}, ${t.b2})` : t.b1);
+        root.style.setProperty('--btn-text', t.bText);
+      } catch (e) {}
+    }
+    // 監聽畫面切換，當輸入密碼進入後台時自動把新調色盤插進去
+    const observer = new MutationObserver(() => injectThemePanel());
+    observer.observe(document.body, { childList: true, subtree: true });
+    injectThemePanel();
+  });
+})();
+</script>
 </body>
 </html>
