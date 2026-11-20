@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>金萃大賞｜年度飲品頒獎典禮互動預測系統</title>
+  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230B2B26'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='38'%3E%F0%9F%8F%86%3C/text%3E%3C/svg%3E">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Noto Serif TC, Noto Sans TC, Inter -->
@@ -1548,14 +1549,25 @@
       const defaultIconBox = document.getElementById('header-default-icon-box');
       const customLogoBox = document.getElementById('header-custom-logo-box');
       const customLogoImg = document.getElementById('header-custom-logo-img');
+      const faviconEl = document.getElementById('dynamic-favicon');
+      const defaultSvgFavicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230B2B26'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='38'%3E%F0%9F%8F%86%3C/text%3E%3C/svg%3E";
+
       if (logoData) {
         defaultIconBox.classList.add('hidden');
         customLogoBox.classList.remove('hidden');
         customLogoImg.src = logoData;
+        if (faviconEl) {
+          faviconEl.type = 'image/png';
+          faviconEl.href = logoData;
+        }
       } else {
         defaultIconBox.classList.remove('hidden');
         customLogoBox.classList.add('hidden');
         customLogoImg.src = '';
+        if (faviconEl) {
+          faviconEl.type = 'image/svg+xml';
+          faviconEl.href = defaultSvgFavicon;
+        }
       }
 
       // 同步後台 Logo 預覽圖
@@ -2601,15 +2613,17 @@
         if (logoData) {
           const logoImg = new Image();
           logoImg.onload = function () {
-            drawCenterBadge();
-            const pad = 5;
-            ctx.drawImage(
-              logoImg,
-              centerPos + pad,
-              centerPos + pad,
-              badgeSize - pad * 2,
-              badgeSize - pad * 2
-            );
+            drawCenterBadge(); // 保留純白底層（確保透明背景 PNG 的圖案依然清晰好讀）
+            ctx.save();
+            ctx.beginPath();
+            if (ctx.roundRect) {
+              ctx.roundRect(centerPos, centerPos, badgeSize, badgeSize, radius);
+            } else {
+              ctx.rect(centerPos, centerPos, badgeSize, badgeSize);
+            }
+            ctx.clip(); // 依圓角形狀裁切，讓滿版圖片的四個角落也保持圓滑
+            ctx.drawImage(logoImg, centerPos, centerPos, badgeSize, badgeSize);
+            ctx.restore();
           };
           logoImg.src = logoData;
         } else {
