@@ -1,0 +1,2313 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>金萃大賞｜年度飲品頒獎典禮互動預測系統</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Noto Serif TC, Noto Sans TC, Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <!-- QRious Lightweight Canvas QR Code Library (with fallback) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+  <style>
+    :root {
+      --theme-bg-1: #0B2B26;
+      --theme-bg-2: #164A41;
+      --theme-accent: #D4AF37;
+      --theme-accent-bright: #F3D060;
+      --theme-bg-style: linear-gradient(135deg, #0B2B26 0%, #164A41 100%);
+    }
+
+    body {
+      font-family: 'Noto Sans TC', 'Inter', sans-serif;
+      background-color: #FAF7F0;
+      color: #1A2421;
+      overflow-x: hidden;
+    }
+
+    .font-serif-title {
+      font-family: 'Noto Serif TC', serif;
+    }
+
+    .font-display {
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    }
+
+    /* 動態主題背景與強調色 */
+    .ceremony-theme-bg {
+      background: var(--theme-bg-style);
+      transition: background 0.4s ease;
+    }
+
+    .ceremony-accent-text {
+      color: var(--theme-accent-bright);
+    }
+
+    .ceremony-accent-border {
+      border-color: color-mix(in srgb, var(--theme-accent) 45%, transparent);
+    }
+
+    .gold-gradient-bg {
+      background: linear-gradient(135deg, var(--theme-accent-bright) 0%, var(--theme-accent) 100%);
+    }
+
+    .gold-glow {
+      box-shadow: 0 10px 35px -8px color-mix(in srgb, var(--theme-accent) 40%, transparent);
+    }
+
+    /* 拖曳互動效果 */
+    .drag-over {
+      border-color: var(--theme-accent) !important;
+      background-color: color-mix(in srgb, var(--theme-accent) 16%, white) !important;
+      transform: scale(1.015);
+    }
+
+    /* 開獎揭曉動畫 */
+    @keyframes revealPop {
+      0% { opacity: 0; transform: scale(0.84) translateY(18px); filter: blur(4px); }
+      65% { opacity: 1; transform: scale(1.03) translateY(-2px); filter: blur(0); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-reveal {
+      animation: revealPop 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
+    ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.55); border-radius: 9999px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- 頂部典禮導覽列 -->
+  <header class="ceremony-theme-bg text-[#FAF7F0] border-b ceremony-accent-border sticky top-0 z-40 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+      <!-- 品牌與典禮標題 -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl gold-gradient-bg flex items-center justify-center text-slate-950 shadow-md shrink-0">
+          <i class="fa-solid fa-trophy text-lg"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 id="header-event-title" class="font-serif-title font-bold text-base sm:text-xl tracking-wide ceremony-accent-text truncate">
+              金萃大賞｜年度飲品頒獎典禮
+            </h1>
+            <span id="sync-badge" class="hidden md:inline-flex items-center gap-1.5 text-[11px] px-2.5 py-0.5 rounded-full bg-black/25 ceremony-accent-text border ceremony-accent-border shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span id="sync-status-text">即時同步中</span>
+            </span>
+          </div>
+          <p class="text-[11px] text-white/70 hidden sm:block truncate">THE GOLDEN BREW AWARDS · 互動預測盛典</p>
+        </div>
+      </div>
+
+      <!-- 模式切換器 & QR Code 快捷鍵 -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button onclick="openQrModal()" title="顯示現場掃碼 QR Code"
+          class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition">
+          <i class="fa-solid fa-qrcode"></i>
+          <span>活動 QR Code</span>
+        </button>
+
+        <nav class="flex items-center bg-black/30 p-1 rounded-xl border border-white/15">
+          <button onclick="switchView('guest')" id="nav-guest"
+            class="view-tab px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+            <span>來賓預測</span>
+          </button>
+          <button onclick="switchView('stage')" id="nav-stage"
+            class="view-tab px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-tv"></i>
+            <span>大螢幕開獎</span>
+          </button>
+          <button onclick="switchView('admin')" id="nav-admin"
+            class="view-tab px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-sliders"></i>
+            <span>主持人後台</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- 全域通知 Toast 容器 -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- 自訂確認視窗 Modal -->
+  <div id="custom-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-[#FAF7F0] border-2 ceremony-accent-border rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-700 flex items-center justify-center">
+          <i class="fa-solid fa-circle-exclamation text-xl"></i>
+        </div>
+        <h3 id="modal-title" class="font-serif-title font-bold text-lg text-slate-900">系統提示</h3>
+      </div>
+      <p id="modal-message" class="text-sm text-slate-700 leading-relaxed mb-6"></p>
+      <div class="flex justify-end gap-3">
+        <button onclick="closeModal()"
+          class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-200/70 transition">
+          取消
+        </button>
+        <button id="modal-confirm-btn"
+          class="px-5 py-2 rounded-xl text-sm font-bold ceremony-theme-bg ceremony-accent-text hover:opacity-95 transition shadow">
+          確定執行
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 活動 QR Code 彈跳視窗 Modal -->
+  <div id="qr-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border-2 ceremony-accent-border text-center relative">
+      <button onclick="closeQrModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-extrabold mb-2">
+        <i class="fa-solid fa-mobile-screen"></i>
+        <span>SCAN TO JOIN · 掃碼加入預測</span>
+      </div>
+      <h3 id="qr-modal-event-title" class="font-serif-title text-xl font-black text-slate-900 mb-1">
+        金萃大賞｜年度飲品頒獎典禮
+      </h3>
+      <p class="text-xs text-slate-500 mb-5">請現場來賓開啟手機相機掃描下方條碼參與預測</p>
+
+      <!-- QR Code 畫布 / 圖片顯示區 -->
+      <div class="bg-[#FAF7F0] p-5 rounded-2xl border-2 border-dashed border-amber-400/70 inline-flex flex-col items-center justify-center mx-auto mb-5 shadow-inner">
+        <canvas id="qr-canvas" class="rounded-lg bg-white p-2"></canvas>
+        <img id="qr-fallback-img" alt="活動 QR Code" class="hidden w-52 h-52 rounded-lg bg-white p-2" />
+      </div>
+
+      <!-- 網址顯示與自訂輸入 -->
+      <div class="text-left bg-slate-50 p-3.5 rounded-xl border border-slate-200 mb-4">
+        <label class="block text-[11px] font-bold text-slate-600 mb-1">
+          <i class="fa-solid fa-link mr-1"></i>活動連線網址（若部署至 Netlify 等空間可在此貼上正式網址更新條碼）：
+        </label>
+        <div class="flex gap-2">
+          <input type="text" id="qr-url-input" oninput="regenerateQrFromInput()"
+            class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-amber-600">
+          <button onclick="copyQrUrl()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 shrink-0">
+            複製
+          </button>
+        </div>
+        <p id="qr-local-warning" class="hidden text-[11px] text-amber-700 mt-1.5">
+          <i class="fa-solid fa-triangle-exclamation mr-1"></i>目前為本機檔案路徑 (file://)，上傳至網路空間後貼上 https:// 網址即可讓來賓手機掃描。
+        </p>
+      </div>
+
+      <button onclick="closeQrModal()" class="w-full py-3 rounded-xl ceremony-theme-bg ceremony-accent-text font-bold text-sm shadow-md">
+        完成並關閉
+      </button>
+    </div>
+  </div>
+
+  <!-- 主內容區塊 -->
+  <main class="flex-1 w-full">
+
+    <!-- ===================================================================== -->
+    <!-- 1. 來賓預測端 (GUEST VIEW)                                              -->
+    <!-- ===================================================================== -->
+    <section id="view-guest" class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <!-- 狀態橫幅 -->
+      <div class="ceremony-theme-bg text-[#FAF7F0] rounded-2xl p-5 sm:p-6 mb-6 ceremony-accent-border border shadow-xl relative overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+          <div>
+            <div class="flex flex-wrap items-center gap-2 mb-1.5">
+              <span id="guest-status-pill" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/25 text-emerald-200 border border-emerald-400/30">
+                <i class="fa-solid fa-lock-open mr-1"></i>開放預測中
+              </span>
+              <span class="text-xs ceremony-accent-text">
+                已揭曉 <strong id="guest-revealed-count">0</strong> / <strong id="guest-total-drinks-badge">7</strong> 名
+              </span>
+            </div>
+            <h2 class="font-serif-title text-xl sm:text-2xl font-bold ceremony-accent-text">
+              預測年度 Top <span id="guest-heading-count">7</span> 榮耀榜單，贏得最高榮譽加分！
+            </h2>
+            <p class="text-xs sm:text-sm text-white/80 mt-1">
+              操作提示：可將左側飲品<strong class="ceremony-accent-text">拖曳</strong>至右側名次，或直接<strong class="ceremony-accent-text">點擊飲品再點擊右側名次</strong>完成配對。
+            </p>
+          </div>
+
+          <!-- 來賓暱稱與即時分數卡 -->
+          <div class="bg-black/30 backdrop-blur-sm border border-white/15 rounded-xl p-3.5 sm:min-w-[270px]">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <label for="guest-nickname" class="text-xs ceremony-accent-text font-semibold">
+                <i class="fa-solid fa-user-tie mr-1"></i>您的來賓暱稱
+              </label>
+              <span id="guest-submitted-badge" class="hidden text-[11px] px-2 py-0.5 rounded gold-gradient-bg text-slate-950 font-extrabold">
+                已送出預測
+              </span>
+            </div>
+            <input type="text" id="guest-nickname" maxlength="18" placeholder="請輸入您的暱稱或桌號..."
+              class="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/25 text-white text-sm placeholder-white/45 focus:outline-none focus:border-amber-400">
+            <div class="mt-2.5 pt-2 border-t border-white/15 flex items-center justify-between text-xs">
+              <span class="text-white/75">目前累積積分：</span>
+              <div class="flex items-center gap-1.5">
+                <span id="guest-live-score" class="text-lg font-extrabold ceremony-accent-text font-display">0</span>
+                <span class="text-white/75">分</span>
+                <span id="guest-bonus-tag" class="hidden px-1.5 py-0.5 rounded gold-gradient-bg text-slate-950 font-extrabold text-[10px]">
+                  含冠軍加分
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 雙欄預測操作區 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- 左側：入圍飲品池 -->
+        <div class="lg:col-span-5 bg-white rounded-2xl p-5 border border-stone-200 shadow-md">
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-stone-200">
+            <div>
+              <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-mug-hot text-amber-600"></i>
+                <span>入圍 <span id="guest-left-count">7</span> 大經典飲品</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">點擊選取飲品，或按住拖曳至右側名次欄</p>
+            </div>
+            <button onclick="resetGuestSelection()" id="btn-reset-prediction"
+              class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition font-medium">
+              <i class="fa-solid fa-rotate-left mr-1"></i>清空重排
+            </button>
+          </div>
+
+          <div id="guest-drinks-list" class="space-y-2.5">
+            <!-- JS 動態渲染飲品卡片 -->
+          </div>
+        </div>
+
+        <!-- 右側：第 1 名 ～ 第 N 名預測欄位 -->
+        <div class="lg:col-span-7 bg-white rounded-2xl p-5 border border-stone-200 shadow-md">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-stone-200">
+            <div>
+              <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-ranking-star text-amber-600"></i>
+                <span>您的名次預測榜（第 1 名 ～ 第 <span id="guest-right-count">7</span> 名）</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5" id="scoring-rule-hint">
+                計分規則：完全猜中 +100 分｜誤差 1 名 +50 分｜誤差 2 名 +20 分
+              </p>
+            </div>
+            <button onclick="autoFillGuestPrediction()" id="btn-autofill-prediction"
+              class="text-xs px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100 transition font-semibold">
+              <i class="fa-solid fa-wand-magic-sparkles mr-1 text-amber-600"></i>隨機靈感填入
+            </button>
+          </div>
+
+          <div id="guest-rank-slots" class="space-y-2.5">
+            <!-- JS 動態渲染名次欄位 -->
+          </div>
+
+          <!-- 提交預測按鈕區 -->
+          <div class="mt-6 pt-4 border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="text-xs text-slate-600">
+              已完成配對：<strong id="guest-filled-count" class="text-slate-900 text-sm">0</strong> / <strong id="guest-filled-total">7</strong> 杯飲品
+            </div>
+            <button onclick="submitGuestPrediction()" id="btn-submit-prediction"
+              class="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-base ceremony-theme-bg ceremony-accent-text hover:opacity-95 transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span id="submit-btn-text">送出我的預測榜單</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 來賓端底部：即時戰況與前 5 強 -->
+      <div class="mt-6 bg-white rounded-2xl p-5 border border-stone-200 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="font-serif-title font-bold text-base text-slate-900">
+            <i class="fa-solid fa-crown text-amber-600 mr-1.5"></i>現場即時積分前 5 強
+          </h4>
+          <span class="text-xs text-slate-500">總參與人數：<strong id="guest-total-players">0</strong> 位</span>
+        </div>
+        <div id="guest-mini-leaderboard" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
+          <!-- JS 動態渲染前 5 名 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 2. 大螢幕開獎與排行榜 (STAGE / LIVE DISPLAY VIEW)                      -->
+    <!-- ===================================================================== -->
+    <section id="view-stage" class="hidden min-h-[calc(100vh-4rem)] ceremony-theme-bg text-[#FAF7F0] py-6 px-4 sm:px-8">
+      <div class="max-w-7xl mx-auto">
+        <!-- 大螢幕頂部資訊橫幅 -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 mb-6 border-b border-white/15">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border ceremony-accent-border ceremony-accent-text text-xs font-bold mb-2">
+              <i class="fa-solid fa-sparkles"></i>
+              <span>LIVE CEREMONY · 榮耀揭曉時刻</span>
+            </div>
+            <h2 id="stage-title" class="font-serif-title text-2xl sm:text-4xl font-black tracking-wide ceremony-accent-text">
+              金萃大賞｜年度飲品頒獎典禮
+            </h2>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button onclick="openQrModal()"
+              class="px-4 py-2.5 rounded-xl gold-gradient-bg text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg hover:brightness-105 transition flex items-center gap-2">
+              <i class="fa-solid fa-qrcode text-base"></i>
+              <span>顯示掃碼 QR Code</span>
+            </button>
+
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-white/15 text-center">
+              <div class="text-[11px] text-white/60">預測狀態</div>
+              <div id="stage-lock-status" class="text-sm font-bold text-emerald-300 mt-0.5">開放預測中</div>
+            </div>
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-white/15 text-center">
+              <div class="text-[11px] text-white/60">參與來賓</div>
+              <div class="text-lg font-extrabold ceremony-accent-text font-display"><span id="stage-player-count">0</span> <span class="text-xs font-normal">位</span></div>
+            </div>
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-white/15 text-center">
+              <div class="text-[11px] text-white/60">揭曉進度</div>
+              <div class="text-lg font-extrabold ceremony-accent-text font-display"><span id="stage-reveal-progress">0</span> / <span id="stage-reveal-total">7</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 大螢幕核心三欄 -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- 左欄：入圍飲品名單 (3欄) -->
+          <div class="lg:col-span-3 bg-black/25 backdrop-blur-sm rounded-2xl p-4 border border-white/15">
+            <h3 class="font-serif-title font-bold text-base ceremony-accent-text pb-3 mb-3 border-b border-white/15 flex items-center gap-2">
+              <i class="fa-solid fa-glass-water"></i>
+              <span>本屆入圍 <span id="stage-drinks-count">7</span> 款飲品</span>
+            </h3>
+            <div id="stage-drinks-pool" class="space-y-2.5 max-h-[620px] overflow-y-auto pr-1">
+              <!-- JS 動態渲染入圍飲品 -->
+            </div>
+          </div>
+
+          <!-- 中欄：第 1 名 ～ 第 N 名 榮耀揭曉舞台 (5欄) -->
+          <div class="lg:col-span-5 bg-black/35 backdrop-blur-sm rounded-2xl p-5 border-2 ceremony-accent-border gold-glow">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-white/15">
+              <h3 class="font-serif-title font-bold text-lg ceremony-accent-text flex items-center gap-2">
+                <i class="fa-solid fa-award"></i>
+                <span>官方最終排名揭曉</span>
+              </h3>
+              <span class="text-xs text-white/65">由最後一名依序揭曉至冠軍</span>
+            </div>
+            <div id="stage-podium-list" class="space-y-3 max-h-[620px] overflow-y-auto pr-1">
+              <!-- JS 動態渲染第 1 ~ N 名揭曉卡片 -->
+            </div>
+          </div>
+
+          <!-- 右欄：來賓即時積分排行榜 (4欄) -->
+          <div class="lg:col-span-4 bg-black/25 backdrop-blur-sm rounded-2xl p-5 border border-white/15 flex flex-col">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-white/15">
+              <h3 class="font-serif-title font-bold text-lg ceremony-accent-text flex items-center gap-2">
+                <i class="fa-solid fa-crown"></i>
+                <span>預測神人即時排行榜</span>
+              </h3>
+              <span id="stage-bonus-indicator" class="hidden text-[11px] px-2.5 py-0.5 rounded-full gold-gradient-bg text-slate-950 font-extrabold animate-pulse">
+                <i class="fa-solid fa-star mr-1"></i>已頒發最高分加分
+              </span>
+            </div>
+
+            <div id="stage-leaderboard" class="space-y-2.5 flex-1 overflow-y-auto max-h-[620px] pr-1">
+              <!-- JS 動態渲染排行榜 -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 3. 主持人 / 管理員後台 (ADMIN CONTROL PANEL)                          -->
+    <!-- ===================================================================== -->
+    <section id="view-admin" class="hidden max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+      <!-- 後台密碼鎖定畫面 -->
+      <div id="admin-login-box" class="max-w-md mx-auto my-12 bg-white rounded-2xl p-8 border-2 ceremony-accent-border shadow-xl text-center">
+        <div class="w-16 h-16 rounded-2xl ceremony-theme-bg ceremony-accent-text flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <i class="fa-solid fa-shield-halved text-2xl"></i>
+        </div>
+        <h2 class="font-serif-title text-2xl font-bold text-slate-900 mb-1">主持人控場後台</h2>
+        <p class="text-xs text-slate-500 mb-6">請輸入管理員密碼以進入典禮開獎與加分控制台</p>
+
+        <div class="space-y-3">
+          <input type="password" id="admin-password-input" placeholder="請輸入管理密碼（預設：8888）"
+            onkeydown="if(event.key==='Enter') verifyAdminPassword()"
+            class="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-center text-lg font-bold tracking-widest focus:outline-none focus:border-slate-800">
+          <button onclick="verifyAdminPassword()"
+            class="w-full py-3 rounded-xl ceremony-theme-bg ceremony-accent-text font-bold hover:opacity-95 transition shadow-md">
+            解鎖進入後台
+          </button>
+        </div>
+        <p class="text-[11px] text-amber-800 mt-4 bg-amber-100/70 py-1.5 px-3 rounded-lg inline-block">
+          <i class="fa-solid fa-circle-info mr-1"></i>貼心提示：預設密碼為 <strong>8888</strong>
+        </p>
+      </div>
+
+      <!-- 後台主控台內容 (解鎖後顯示) -->
+      <div id="admin-dashboard" class="hidden space-y-6">
+
+        <!-- 頂部快捷控場列 -->
+        <div class="ceremony-theme-bg text-[#FAF7F0] rounded-2xl p-5 border ceremony-accent-border shadow-lg flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded gold-gradient-bg text-slate-950 text-xs font-extrabold">HOST CONSOLE</span>
+              <h2 class="font-serif-title text-xl font-bold ceremony-accent-text">典禮流程與即時開獎控制台</h2>
+            </div>
+            <p class="text-xs text-white/80 mt-1">
+              所有變更將即時同步至「大螢幕開獎頁」與所有「來賓手機畫面」。
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <!-- 開放/鎖定預測切換 -->
+            <button onclick="togglePredictionLock()" id="admin-btn-lock"
+              class="px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 shadow">
+              <i class="fa-solid fa-lock"></i>
+              <span id="admin-lock-text">鎖定預測（截止投票）</span>
+            </button>
+
+            <!-- 顯示 QR Code -->
+            <button onclick="openQrModal()"
+              class="px-4 py-2.5 rounded-xl gold-gradient-bg text-slate-950 font-extrabold text-sm transition flex items-center gap-2 shadow">
+              <i class="fa-solid fa-qrcode"></i>
+              <span>活動 QR Code</span>
+            </button>
+
+            <!-- 產生模擬來賓數據 -->
+            <button onclick="generateMockPlayers()"
+              class="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 ceremony-accent-text border border-white/25 font-semibold text-sm transition flex items-center gap-2">
+              <i class="fa-solid fa-users-gear"></i>
+              <span>產生 8 位模擬來賓</span>
+            </button>
+
+            <!-- 匯出成績單 CSV -->
+            <button onclick="exportResultsCSV()"
+              class="px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-sm transition flex items-center gap-2">
+              <i class="fa-solid fa-file-csv"></i>
+              <span>匯出 CSV</span>
+            </button>
+
+            <!-- 重置整場比賽 -->
+            <button onclick="confirmResetAll()"
+              class="px-4 py-2.5 rounded-xl bg-red-600/90 hover:bg-red-600 text-white font-semibold text-sm transition flex items-center gap-2">
+              <i class="fa-solid fa-trash-can"></i>
+              <span>重置比賽</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 主控網格第一排：官方開獎 & 最高分加分 -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- 模組 A：官方實際排名設定與「逐步公布」控制 (佔 6 欄) -->
+          <div class="lg:col-span-6 bg-white rounded-2xl p-6 border border-stone-200 shadow-md">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-4 border-b border-stone-200">
+              <div>
+                <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
+                  <i class="fa-solid fa-bullhorn text-amber-600"></i>
+                  <span>步驟 1：設定官方名次並逐步公布</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">先為第 1～<span id="admin-rank-total-hint">7</span> 名指定得獎飲品，再依典禮節奏逐一揭曉</p>
+              </div>
+              <button onclick="randomizeOfficialRanking()"
+                class="text-xs px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100 font-semibold">
+                <i class="fa-solid fa-shuffle mr-1"></i>隨機排定名次
+              </button>
+            </div>
+
+            <!-- 快捷逐步揭曉按鈕列 -->
+            <div class="bg-stone-50 rounded-xl p-3.5 mb-4 border border-stone-200 flex flex-wrap items-center justify-between gap-3">
+              <div class="text-xs text-slate-700">
+                揭曉進度：<strong class="text-slate-900 text-sm" id="admin-reveal-stat">0 / 7</strong> 名
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="revealNextRank()" id="btn-reveal-next"
+                  class="px-4 py-2 rounded-lg ceremony-theme-bg ceremony-accent-text hover:opacity-95 font-bold text-xs shadow flex items-center gap-1.5">
+                  <i class="fa-solid fa-wand-sparkles"></i>
+                  <span id="btn-reveal-next-text">揭曉下一名（第 7 名）</span>
+                </button>
+                <button onclick="revealAllRanks()"
+                  class="px-3 py-2 rounded-lg bg-amber-100 text-amber-900 hover:bg-amber-200 font-bold text-xs">
+                  全部揭曉
+                </button>
+                <button onclick="hideAllRanks()"
+                  class="px-3 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-white font-semibold text-xs">
+                  全部隱藏
+                </button>
+              </div>
+            </div>
+
+            <!-- 第 1 ~ N 名官方設定與單獨揭曉開關 -->
+            <div id="admin-official-ranks" class="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+              <!-- JS 動態生成名次設定列 -->
+            </div>
+          </div>
+
+          <!-- 模組 B：最高分玩家額外加分設定 & 計分規則 (佔 6 欄) -->
+          <div class="lg:col-span-6 space-y-6">
+
+            <!-- 最高分玩家額外加分專區 -->
+            <div class="bg-white rounded-2xl p-6 border-2 ceremony-accent-border shadow-md">
+              <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-200">
+                <div>
+                  <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-crown text-amber-600"></i>
+                    <span>步驟 2：預測最高分玩家額外加分</span>
+                  </h3>
+                  <p class="text-xs text-slate-500 mt-0.5">頒獎尾聲可為預測積分最高的玩家頒發額外加分</p>
+                </div>
+                <span id="admin-bonus-status-badge" class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-bold">
+                  尚未套用加分
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">額外加分數值（分）</label>
+                  <input type="number" id="admin-bonus-points" value="50" step="10" min="0" max="1000"
+                    onchange="updateBonusSettings()"
+                    class="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-slate-50 font-bold text-slate-900 focus:outline-none focus:border-slate-800">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">加分發放模式</label>
+                  <select id="admin-bonus-mode" onchange="updateBonusSettings()"
+                    class="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold text-sm text-slate-900 focus:outline-none focus:border-slate-800">
+                    <option value="auto_top">自動頒發給「最高分玩家」（含同分並列）</option>
+                    <option value="manual">手動勾選指定玩家獲得加分</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 當前最高分玩家預覽 / 手動勾選清單 -->
+              <div class="bg-stone-50 rounded-xl p-3.5 border border-stone-200 mb-4">
+                <div class="text-xs font-bold text-slate-800 mb-2 flex items-center justify-between">
+                  <span id="bonus-target-label">目前符合最高分資格的玩家：</span>
+                  <span class="text-amber-700" id="current-top-score-display">最高基礎分：0 分</span>
+                </div>
+                <div id="admin-bonus-candidates" class="space-y-1.5 max-h-36 overflow-y-auto">
+                  <!-- JS 動態列出玩家 -->
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <button onclick="toggleApplyBonus(true)"
+                  class="flex-1 py-3 px-4 rounded-xl gold-gradient-bg text-slate-950 font-extrabold text-sm shadow-md hover:brightness-105 transition flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-award"></i>
+                  <span>確定頒發最高分額外加分！</span>
+                </button>
+                <button onclick="toggleApplyBonus(false)"
+                  class="py-3 px-4 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition">
+                  取消加分
+                </button>
+              </div>
+            </div>
+
+            <!-- 計分規則與活動標題設定 -->
+            <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-md">
+              <h3 class="font-serif-title font-bold text-base text-slate-900 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-calculator text-amber-600"></i>
+                <span>計分權重與活動標題設定</span>
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">典禮活動標題</label>
+                  <input type="text" id="admin-event-title-input" onchange="saveGeneralSettings()"
+                    class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-sm font-bold text-slate-900">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">完全猜中名次（分）</label>
+                  <input type="number" id="score-exact" value="100" onchange="saveGeneralSettings()"
+                    class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-bold">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">名次誤差 1 名（分）</label>
+                  <input type="number" id="score-diff1" value="50" onchange="saveGeneralSettings()"
+                    class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-bold">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">名次誤差 2 名（分）</label>
+                  <input type="number" id="score-diff2" value="20" onchange="saveGeneralSettings()"
+                    class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-slate-50 text-sm font-bold">
+                </div>
+                <div class="flex items-end">
+                  <button onclick="saveGeneralSettings(true)"
+                    class="w-full py-2 px-3 rounded-lg ceremony-theme-bg ceremony-accent-text text-xs font-bold hover:opacity-95 transition">
+                    儲存規則設定
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 主控網格第二排：頁面主題配色自訂 (單色/雙色漸層) & 飲品品項增減管理 -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- 模組 C：頁面主題顏色自訂（單色 / 雙色漸層） -->
+          <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-stone-200 shadow-md">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-200">
+              <div>
+                <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
+                  <i class="fa-solid fa-palette text-amber-600"></i>
+                  <span>頁面主題配色（單色 / 雙色漸層）</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">可即時改變典禮主視覺底色，並同步至大螢幕與來賓端</p>
+              </div>
+            </div>
+
+            <!-- 推薦主題色票一鍵套用 -->
+            <div class="mb-4">
+              <label class="block text-xs font-bold text-slate-700 mb-2">快速典禮色票預設：</label>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <button onclick="applyThemePreset('gradient', '#0B2B26', '#164A41', '#D4AF37', '135deg')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                  <span class="w-5 h-5 rounded-full shrink-0" style="background: linear-gradient(135deg, #0B2B26, #164A41);"></span>
+                  <span class="text-xs font-bold text-slate-800 truncate">經典翠綠金</span>
+                </button>
+                <button onclick="applyThemePreset('gradient', '#111827', '#374151', '#F59E0B', '135deg')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                  <span class="w-5 h-5 rounded-full shrink-0" style="background: linear-gradient(135deg, #111827, #374151);"></span>
+                  <span class="text-xs font-bold text-slate-800 truncate">黑金奢華夜</span>
+                </button>
+                <button onclick="applyThemePreset('gradient', '#4C0519', '#881337', '#FBBF24', '135deg')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                  <span class="w-5 h-5 rounded-full shrink-0" style="background: linear-gradient(135deg, #4C0519, #881337);"></span>
+                  <span class="text-xs font-bold text-slate-800 truncate">莓果紅酒紅</span>
+                </button>
+                <button onclick="applyThemePreset('gradient', '#0F172A', '#1E3A8A', '#38BDF8', '135deg')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                  <span class="w-5 h-5 rounded-full shrink-0" style="background: linear-gradient(135deg, #0F172A, #1E3A8A);"></span>
+                  <span class="text-xs font-bold text-slate-800 truncate">皇家星夜藍</span>
+                </button>
+                <button onclick="applyThemePreset('gradient', '#7C2D12', '#C2410C', '#FDE047', '135deg')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                  <span class="w-5 h-5 rounded-full shrink-0" style="background: linear-gradient(135deg, #7C2D12, #C2410C);"></span>
+                  <span class="text-xs font-bold text-slate-800 truncate">暖橘果茶夕陽</span>
+                </button>
+                <button onclick="applyThemePreset('solid', '#1E293B', '#1E293B', '#EAB308', '135deg')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                  <span class="w-5 h-5 rounded-full shrink-0" style="background: #1E293B;"></span>
+                  <span class="text-xs font-bold text-slate-800 truncate">純粹石墨單色</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 單色 / 雙色漸層模式切換 -->
+            <div class="space-y-3 bg-stone-50 p-4 rounded-xl border border-stone-200">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-slate-700">色彩填充模式：</label>
+                <div class="inline-flex rounded-lg bg-slate-200 p-0.5">
+                  <button type="button" id="theme-mode-solid" onclick="setThemeMode('solid')"
+                    class="px-3 py-1 rounded-md text-xs font-bold transition">
+                    單色模式
+                  </button>
+                  <button type="button" id="theme-mode-gradient" onclick="setThemeMode('gradient')"
+                    class="px-3 py-1 rounded-md text-xs font-bold transition">
+                    雙色漸層
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1" id="theme-c1-label">主背景色 1</label>
+                  <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-lg border border-slate-300">
+                    <input type="color" id="theme-color-1" value="#0B2B26" onchange="updateThemeFromInputs()"
+                      class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
+                    <span id="theme-color-1-hex" class="text-[11px] font-mono text-slate-600">#0B2B26</span>
+                  </div>
+                </div>
+
+                <div id="theme-c2-wrapper">
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">漸層背景色 2</label>
+                  <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-lg border border-slate-300">
+                    <input type="color" id="theme-color-2" value="#164A41" onchange="updateThemeFromInputs()"
+                      class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
+                    <span id="theme-color-2-hex" class="text-[11px] font-mono text-slate-600">#164A41</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">文字/徽章點綴色</label>
+                  <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-lg border border-slate-300">
+                    <input type="color" id="theme-accent-color" value="#D4AF37" onchange="updateThemeFromInputs()"
+                      class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
+                    <span id="theme-accent-hex" class="text-[11px] font-mono text-slate-600">#D4AF37</span>
+                  </div>
+                </div>
+              </div>
+
+              <div id="theme-angle-wrapper" class="pt-1">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">雙色漸層方向：</label>
+                <select id="theme-gradient-angle" onchange="updateThemeFromInputs()"
+                  class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-800">
+                  <option value="135deg">左上 → 右下對角線漸層 (135°)</option>
+                  <option value="180deg">由上 → 下垂直漸層 (180°)</option>
+                  <option value="90deg">由左 → 右水平漸層 (90°)</option>
+                  <option value="45deg">左下 → 右上對角線漸層 (45°)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 模組 D：入圍飲品品項編輯與增減管理 -->
+          <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-stone-200 shadow-md">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200">
+              <div>
+                <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
+                  <i class="fa-solid fa-pen-to-square text-amber-600"></i>
+                  <span>入圍飲品管理（目前共 <span id="admin-drinks-count">7</span> 項）</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">可自由修改飲品名稱、新增品項或移除品項，排名欄位將自動同步</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="addNewDrinkItem()"
+                  class="px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                  <i class="fa-solid fa-plus"></i>
+                  <span>新增飲品</span>
+                </button>
+                <button onclick="saveDrinksList()"
+                  class="px-4 py-1.5 rounded-lg ceremony-theme-bg ceremony-accent-text text-xs font-bold hover:opacity-95 transition shadow-sm">
+                  儲存飲品變更
+                </button>
+              </div>
+            </div>
+
+            <div id="admin-drinks-editor" class="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+              <!-- JS 動態生成飲品編輯列 -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 主控網格第三排：參賽來賓即時名單 -->
+        <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-md">
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-200">
+            <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-users text-amber-600"></i>
+              <span>已提交預測來賓名單 (<span id="admin-players-count">0</span> 位)</span>
+            </h3>
+            <span class="text-xs text-slate-500">點擊垃圾桶可移除單一玩家紀錄</span>
+          </div>
+          <div id="admin-players-table" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[360px] overflow-y-auto pr-1">
+            <!-- JS 動態渲染玩家列表 -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 應用程式核心邏輯 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // =========================================================================
+    // 1. 預設資料與狀態架構
+    // =========================================================================
+    const DEFAULT_DRINKS = [
+      { id: 'd1', name: '黑糖珍珠厚鮮奶', tag: '濃郁系代表', desc: '手炒黑糖掛壁搭配 Q 彈波霸與小農鮮乳', icon: '🧋' },
+      { id: 'd2', name: '四季春青茶', tag: '純茶系王者', desc: '南投鹿谷清香高山茶湯，回甘不澀口', icon: '🍵' },
+      { id: 'd3', name: '楊枝甘露 2.0', tag: '果茶系霸主', desc: '愛文芒果冰沙融合紅柚果粒與椰奶凍', icon: '🥭' },
+      { id: 'd4', name: '芝士奶蓋金萱烏龍', tag: '綿密系首選', desc: '紐西蘭海鹽起司奶蓋搭焙火金萱茶底', icon: '🧀' },
+      { id: 'd5', name: '百香雙響炮', tag: '咀嚼系經典', desc: '酸甜鮮百香果汁加入珍珠與脆口椰果', icon: '🍹' },
+      { id: 'd6', name: '大甲芋頭鮮奶露', tag: '手作系人氣', desc: '每日現蒸綿密大甲芋泥融入香醇鮮奶', icon: '🍠' },
+      { id: 'd7', name: '翡翠檸檬綠茶', tag: '清爽系冠軍', desc: '屏東九如新鮮榨檸檬搭配茉莉綠茶', icon: '🍋' }
+    ];
+
+    const INITIAL_STATE = {
+      eventTitle: '金萃大賞｜年度飲品頒獎典禮',
+      isLocked: false,
+      drinks: JSON.parse(JSON.stringify(DEFAULT_DRINKS)),
+      officialRanks: ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'],
+      revealedRanks: [],
+      scoring: {
+        exact: 100,
+        diff1: 50,
+        diff2: 20
+      },
+      bonus: {
+        applied: false,
+        points: 50,
+        mode: 'auto_top',
+        manualPlayerIds: []
+      },
+      theme: {
+        mode: 'gradient', // 'solid' | 'gradient'
+        color1: '#0B2B26',
+        color2: '#164A41',
+        accent: '#D4AF37',
+        angle: '135deg'
+      },
+      players: {}
+    };
+
+    let appState = JSON.parse(JSON.stringify(INITIAL_STATE));
+    let currentView = 'guest';
+    let isAdminAuthenticated = false;
+
+    // 來賓本機操作狀態
+    let guestPlayerId = sessionStorage.getItem('beverage_award_uid') || ('guest_' + Math.random().toString(36).substring(2, 10));
+    sessionStorage.setItem('beverage_award_uid', guestPlayerId);
+    let localGuestSlots = [];
+    let selectedDrinkIdForTap = null;
+    let hasLoadedInitialGuestSlots = false;
+
+    // 同步引擎變數
+    let db = null;
+    let auth = null;
+    let stateDocRef = null;
+    let useCloudSync = false;
+    const LOCAL_STORAGE_KEY = 'golden_brew_awards_state_v2';
+    const broadcastChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('golden_brew_awards_channel_v2') : null;
+
+    // =========================================================================
+    // 2. 初始化同步引擎
+    // =========================================================================
+    async function initSyncEngine() {
+      try {
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+          const firebaseConfig = JSON.parse(__firebase_config);
+          const appId = typeof __app_id !== 'undefined' ? __app_id : 'golden-brew-awards';
+          const app = initializeApp(firebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
+
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+
+          stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'ceremony_state', 'live_session_v2');
+          useCloudSync = true;
+          updateSyncBadge('雲端多人即時連線');
+
+          onSnapshot(stateDocRef, (snapshot) => {
+            if (snapshot.exists()) {
+              mergeAndApplyState(snapshot.data());
+            } else {
+              persistState(appState);
+            }
+          }, () => fallbackToLocalSync());
+          return;
+        }
+      } catch (e) {
+        console.warn('啟用本機跨分頁同步模式:', e);
+      }
+      fallbackToLocalSync();
+    }
+
+    function fallbackToLocalSync() {
+      useCloudSync = false;
+      updateSyncBadge('本機/多視窗即時同步');
+
+      try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (saved) {
+          mergeAndApplyState(JSON.parse(saved));
+        } else {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      window.addEventListener('storage', (event) => {
+        if (event.key === LOCAL_STORAGE_KEY && event.newValue) {
+          mergeAndApplyState(JSON.parse(event.newValue));
+        }
+      });
+
+      if (broadcastChannel) {
+        broadcastChannel.onmessage = (event) => {
+          if (event.data && event.data.type === 'STATE_UPDATE') {
+            mergeAndApplyState(event.data.payload);
+          }
+        };
+      }
+    }
+
+    function updateSyncBadge(text) {
+      const badge = document.getElementById('sync-badge');
+      const label = document.getElementById('sync-status-text');
+      if (badge && label) {
+        badge.classList.remove('hidden');
+        label.textContent = text;
+      }
+    }
+
+    function normalizeSlotsLength(drinksCount) {
+      if (localGuestSlots.length !== drinksCount) {
+        const validIds = new Set(appState.drinks.map(d => d.id));
+        const next = new Array(drinksCount).fill(null);
+        for (let i = 0; i < Math.min(localGuestSlots.length, drinksCount); i++) {
+          if (validIds.has(localGuestSlots[i])) {
+            next[i] = localGuestSlots[i];
+          }
+        }
+        localGuestSlots = next;
+      }
+    }
+
+    function mergeAndApplyState(incoming) {
+      const prevRevealedCount = appState.revealedRanks ? appState.revealedRanks.length : 0;
+      const prevBonusApplied = appState.bonus ? appState.bonus.applied : false;
+
+      appState = {
+        ...JSON.parse(JSON.stringify(INITIAL_STATE)),
+        ...incoming,
+        scoring: { ...INITIAL_STATE.scoring, ...(incoming.scoring || {}) },
+        bonus: { ...INITIAL_STATE.bonus, ...(incoming.bonus || {}) },
+        theme: { ...INITIAL_STATE.theme, ...(incoming.theme || {}) },
+        players: incoming.players || {}
+      };
+
+      // 確保 officialRanks 長度與 drinks 一致
+      const validDrinkIds = appState.drinks.map(d => d.id);
+      if (!Array.isArray(appState.officialRanks) || appState.officialRanks.length !== validDrinkIds.length) {
+        appState.officialRanks = [...validDrinkIds];
+      }
+
+      normalizeSlotsLength(appState.drinks.length);
+
+      if (!hasLoadedInitialGuestSlots && appState.players[guestPlayerId]) {
+        const myRecord = appState.players[guestPlayerId];
+        if (Array.isArray(myRecord.predictions) && myRecord.predictions.length === appState.drinks.length) {
+          localGuestSlots = [...myRecord.predictions];
+        }
+        const nickInput = document.getElementById('guest-nickname');
+        if (nickInput && myRecord.name) {
+          nickInput.value = myRecord.name;
+        }
+        hasLoadedInitialGuestSlots = true;
+      }
+
+      applyThemeStyles(appState.theme);
+
+      if (appState.revealedRanks.length > prevRevealedCount) {
+        const newlyRevealed = appState.revealedRanks[appState.revealedRanks.length - 1];
+        triggerConfetti(newlyRevealed === 1);
+      }
+      if (!prevBonusApplied && appState.bonus.applied) {
+        triggerConfetti(true);
+      }
+
+      renderAllViews();
+    }
+
+    async function persistState(newState) {
+      appState = newState;
+      applyThemeStyles(appState.theme);
+      renderAllViews();
+
+      if (useCloudSync && stateDocRef) {
+        try {
+          await setDoc(stateDocRef, appState);
+        } catch (err) {
+          console.error('雲端寫入失敗:', err);
+        }
+      } else {
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+          if (broadcastChannel) {
+            broadcastChannel.postMessage({ type: 'STATE_UPDATE', payload: appState });
+          }
+        } catch (err) {
+          console.error('本機儲存失敗:', err);
+        }
+      }
+    }
+
+    // =========================================================================
+    // 3. 主題顏色引擎（單色 / 雙色漸層）
+    // =========================================================================
+    function applyThemeStyles(theme) {
+      const t = { ...INITIAL_STATE.theme, ...(theme || {}) };
+      const root = document.documentElement;
+      root.style.setProperty('--theme-bg-1', t.color1);
+      root.style.setProperty('--theme-bg-2', t.color2);
+      root.style.setProperty('--theme-accent', t.accent);
+      root.style.setProperty('--theme-accent-bright', lightenHex(t.accent, 22));
+
+      if (t.mode === 'solid') {
+        root.style.setProperty('--theme-bg-style', t.color1);
+      } else {
+        root.style.setProperty('--theme-bg-style', `linear-gradient(${t.angle || '135deg'}, ${t.color1} 0%, ${t.color2} 100%)`);
+      }
+    }
+
+    function lightenHex(hex, percent) {
+      try {
+        const num = parseInt(hex.replace('#', ''), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = Math.min(255, (num >> 16) + amt);
+        const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+        const B = Math.min(255, (num & 0x0000FF) + amt);
+        return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+      } catch {
+        return hex;
+      }
+    }
+
+    // =========================================================================
+    // 4. 計分與排行榜核心演算法
+    // =========================================================================
+    function calculateLeaderboard() {
+      const playersList = Object.values(appState.players || {});
+      const revealedSet = new Set(appState.revealedRanks || []);
+      const { exact, diff1, diff2 } = appState.scoring;
+      const totalRanks = appState.drinks.length;
+
+      const computed = playersList.map(player => {
+        let baseScore = 0;
+        let exactHits = 0;
+
+        for (let rank = 1; rank <= totalRanks; rank++) {
+          if (!revealedSet.has(rank)) continue;
+          const officialDrinkId = appState.officialRanks[rank - 1];
+          if (!officialDrinkId) continue;
+
+          const predictedIndex = (player.predictions || []).indexOf(officialDrinkId);
+          if (predictedIndex !== -1) {
+            const predictedRank = predictedIndex + 1;
+            const diff = Math.abs(predictedRank - rank);
+            if (diff === 0) {
+              baseScore += Number(exact || 0);
+              exactHits += 1;
+            } else if (diff === 1) {
+              baseScore += Number(diff1 || 0);
+            } else if (diff === 2) {
+              baseScore += Number(diff2 || 0);
+            }
+          }
+        }
+
+        return {
+          ...player,
+          baseScore,
+          exactHits,
+          bonusAwarded: 0,
+          totalScore: baseScore
+        };
+      });
+
+      const maxBaseScore = computed.length > 0 ? Math.max(...computed.map(p => p.baseScore)) : 0;
+      const bonusPts = Number(appState.bonus.points || 0);
+
+      computed.forEach(p => {
+        let qualifies = false;
+        if (appState.bonus.mode === 'auto_top') {
+          qualifies = (computed.length > 0 && maxBaseScore > 0 && p.baseScore === maxBaseScore);
+        } else {
+          qualifies = (appState.bonus.manualPlayerIds || []).includes(p.id);
+        }
+        p.isBonusCandidate = qualifies;
+
+        if (appState.bonus.applied && qualifies) {
+          p.bonusAwarded = bonusPts;
+          p.totalScore = p.baseScore + bonusPts;
+        }
+      });
+
+      computed.sort((a, b) => {
+        if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+        if (b.exactHits !== a.exactHits) return b.exactHits - a.exactHits;
+        return (a.updatedAt || 0) - (b.updatedAt || 0);
+      });
+
+      return { leaderboard: computed, maxBaseScore };
+    }
+
+    // =========================================================================
+    // 5. 畫面切換與全域渲染調度
+    // =========================================================================
+    window.switchView = function(viewName) {
+      currentView = viewName;
+      ['guest', 'stage', 'admin'].forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        const tab = document.getElementById(`nav-${v}`);
+        if (v === viewName) {
+          el.classList.remove('hidden');
+          tab.classList.add('gold-gradient-bg', 'text-slate-950', 'shadow');
+          tab.classList.remove('text-white/80', 'hover:text-white');
+        } else {
+          el.classList.add('hidden');
+          tab.classList.remove('gold-gradient-bg', 'text-slate-950', 'shadow');
+          tab.classList.add('text-white/80', 'hover:text-white');
+        }
+      });
+      renderAllViews();
+    };
+
+    function renderAllViews() {
+      const title = appState.eventTitle || INITIAL_STATE.eventTitle;
+      document.getElementById('header-event-title').textContent = title;
+      const stageTitleEl = document.getElementById('stage-title');
+      if (stageTitleEl) stageTitleEl.textContent = title;
+      const qrTitleEl = document.getElementById('qr-modal-event-title');
+      if (qrTitleEl) qrTitleEl.textContent = title;
+
+      const { leaderboard, maxBaseScore } = calculateLeaderboard();
+
+      renderGuestView(leaderboard);
+      renderStageView(leaderboard);
+      if (isAdminAuthenticated) {
+        renderAdminView(leaderboard, maxBaseScore);
+      }
+    }
+
+    // =========================================================================
+    // 6. 來賓預測端 (GUEST VIEW) 渲染與互動
+    // =========================================================================
+    function renderGuestView(leaderboard) {
+      const totalDrinks = appState.drinks.length;
+      normalizeSlotsLength(totalDrinks);
+
+      const statusPill = document.getElementById('guest-status-pill');
+      const submitBtn = document.getElementById('btn-submit-prediction');
+      const resetBtn = document.getElementById('btn-reset-prediction');
+      const autoBtn = document.getElementById('btn-autofill-prediction');
+
+      if (appState.isLocked) {
+        statusPill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-400/25 ceremony-accent-text border ceremony-accent-border';
+        statusPill.innerHTML = '<i class="fa-solid fa-lock mr-1"></i>預測已截止鎖定';
+        submitBtn.disabled = true;
+        resetBtn.disabled = true;
+        autoBtn.disabled = true;
+        resetBtn.classList.add('opacity-40', 'cursor-not-allowed');
+        autoBtn.classList.add('opacity-40', 'cursor-not-allowed');
+      } else {
+        statusPill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/25 text-emerald-200 border border-emerald-400/30';
+        statusPill.innerHTML = '<i class="fa-solid fa-lock-open mr-1"></i>開放預測中';
+        submitBtn.disabled = false;
+        resetBtn.disabled = false;
+        autoBtn.disabled = false;
+        resetBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+        autoBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+      }
+
+      document.getElementById('guest-revealed-count').textContent = appState.revealedRanks.length;
+      document.getElementById('guest-total-drinks-badge').textContent = totalDrinks;
+      document.getElementById('guest-heading-count').textContent = totalDrinks;
+      document.getElementById('guest-left-count').textContent = totalDrinks;
+      document.getElementById('guest-right-count').textContent = totalDrinks;
+      document.getElementById('guest-filled-total').textContent = totalDrinks;
+
+      document.getElementById('scoring-rule-hint').textContent =
+        `計分規則：完全猜中 +${appState.scoring.exact} 分｜誤差 1 名 +${appState.scoring.diff1} 分｜誤差 2 名 +${appState.scoring.diff2} 分`;
+
+      const myEntry = leaderboard.find(p => p.id === guestPlayerId);
+      const submittedBadge = document.getElementById('guest-submitted-badge');
+      const liveScoreEl = document.getElementById('guest-live-score');
+      const bonusTagEl = document.getElementById('guest-bonus-tag');
+
+      if (myEntry) {
+        submittedBadge.classList.remove('hidden');
+        document.getElementById('submit-btn-text').textContent = '更新我的預測榜單';
+        liveScoreEl.textContent = myEntry.totalScore;
+        if (myEntry.bonusAwarded > 0) {
+          bonusTagEl.classList.remove('hidden');
+          bonusTagEl.textContent = `含冠軍加分 +${myEntry.bonusAwarded}`;
+        } else {
+          bonusTagEl.classList.add('hidden');
+        }
+      } else {
+        submittedBadge.classList.add('hidden');
+        document.getElementById('submit-btn-text').textContent = '送出我的預測榜單';
+        liveScoreEl.textContent = '0';
+        bonusTagEl.classList.add('hidden');
+      }
+
+      // 左側飲品列表
+      const drinksContainer = document.getElementById('guest-drinks-list');
+      drinksContainer.innerHTML = '';
+
+      appState.drinks.forEach((drink) => {
+        const assignedRankIdx = localGuestSlots.indexOf(drink.id);
+        const isAssigned = assignedRankIdx !== -1;
+        const isSelected = selectedDrinkIdForTap === drink.id;
+
+        const card = document.createElement('div');
+        card.draggable = !appState.isLocked;
+        card.className = `p-3.5 rounded-xl border transition-all select-none flex items-center justify-between gap-3 ${
+          appState.isLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
+        } ${
+          isSelected
+            ? 'border-2 border-amber-500 bg-amber-50 shadow-md scale-[1.01]'
+            : isAssigned
+              ? 'border-slate-200 bg-stone-100/80 opacity-75'
+              : 'border-stone-200 bg-white hover:border-amber-400 hover:shadow-sm'
+        }`;
+
+        if (!appState.isLocked) {
+          card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', drink.id);
+            selectedDrinkIdForTap = drink.id;
+          });
+          card.addEventListener('click', () => {
+            selectedDrinkIdForTap = (selectedDrinkIdForTap === drink.id) ? null : drink.id;
+            renderGuestView(leaderboard);
+          });
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-xl shrink-0">
+              ${escapeHtml(drink.icon || '🥤')}
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm sm:text-base text-slate-900 truncate">${escapeHtml(drink.name)}</span>
+                ${drink.tag ? `<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold shrink-0">${escapeHtml(drink.tag)}</span>` : ''}
+              </div>
+              ${drink.desc ? `<p class="text-xs text-slate-500 truncate mt-0.5">${escapeHtml(drink.desc)}</p>` : ''}
+            </div>
+          </div>
+          <div class="shrink-0">
+            ${
+              isAssigned
+                ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg ceremony-theme-bg ceremony-accent-text text-xs font-bold">
+                     第 ${assignedRankIdx + 1} 名
+                   </span>`
+                : isSelected
+                  ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg gold-gradient-bg text-slate-950 text-xs font-extrabold animate-pulse">
+                       請點右側名次
+                     </span>`
+                  : `<span class="text-xs text-slate-400"><i class="fa-solid fa-grip-vertical"></i></span>`
+            }
+          </div>
+        `;
+        drinksContainer.appendChild(card);
+      });
+
+      // 右側：第 1 ~ N 名預測欄位
+      const slotsContainer = document.getElementById('guest-rank-slots');
+      slotsContainer.innerHTML = '';
+      let filledCount = 0;
+
+      for (let i = 0; i < totalDrinks; i++) {
+        const rankNum = i + 1;
+        const assignedDrinkId = localGuestSlots[i];
+        const drink = appState.drinks.find(d => d.id === assignedDrinkId);
+        if (drink) filledCount++;
+
+        const isRevealed = appState.revealedRanks.includes(rankNum);
+        const officialDrinkId = appState.officialRanks[i];
+        const officialDrink = appState.drinks.find(d => d.id === officialDrinkId);
+
+        let slotResultBadge = '';
+        if (isRevealed && drink) {
+          const officialIdx = appState.officialRanks.indexOf(drink.id);
+          if (officialIdx !== -1) {
+            const diff = Math.abs(officialIdx - i);
+            if (diff === 0) {
+              slotResultBadge = `<span class="px-2 py-0.5 rounded bg-emerald-600 text-white text-[11px] font-bold">完全命中 +${appState.scoring.exact}</span>`;
+            } else if (diff === 1) {
+              slotResultBadge = `<span class="px-2 py-0.5 rounded bg-amber-500 text-white text-[11px] font-bold">差 1 名 +${appState.scoring.diff1}</span>`;
+            } else if (diff === 2) {
+              slotResultBadge = `<span class="px-2 py-0.5 rounded bg-sky-600 text-white text-[11px] font-bold">差 2 名 +${appState.scoring.diff2}</span>`;
+            } else {
+              slotResultBadge = `<span class="px-2 py-0.5 rounded bg-slate-200 text-slate-600 text-[11px]">未中 0 分</span>`;
+            }
+          }
+        }
+
+        const medalStyle = rankNum === 1
+          ? 'gold-gradient-bg text-slate-950 font-black'
+          : rankNum === 2
+            ? 'bg-slate-300 text-slate-900 font-extrabold'
+            : rankNum === 3
+              ? 'bg-amber-700 text-white font-extrabold'
+              : 'bg-slate-100 text-slate-800 font-bold';
+
+        const slotEl = document.createElement('div');
+        slotEl.className = `p-3 rounded-xl border-2 transition-all flex items-center justify-between gap-3 ${
+          drink
+            ? 'border-slate-300 bg-stone-50'
+            : selectedDrinkIdForTap && !appState.isLocked
+              ? 'border-dashed border-amber-500 bg-amber-50/70 cursor-pointer hover:bg-amber-100/70'
+              : 'border-dashed border-stone-300 bg-stone-50/40'
+        }`;
+
+        if (!appState.isLocked) {
+          slotEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            slotEl.classList.add('drag-over');
+          });
+          slotEl.addEventListener('dragleave', () => slotEl.classList.remove('drag-over'));
+          slotEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            slotEl.classList.remove('drag-over');
+            const droppedDrinkId = e.dataTransfer.getData('text/plain');
+            if (droppedDrinkId) assignDrinkToSlot(droppedDrinkId, i);
+          });
+          slotEl.addEventListener('click', () => {
+            if (selectedDrinkIdForTap) assignDrinkToSlot(selectedDrinkIdForTap, i);
+          });
+        }
+
+        slotEl.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-lg ${medalStyle} flex items-center justify-center text-sm shrink-0 shadow-sm">
+              ${rankNum === 1 ? '<i class="fa-solid fa-crown"></i>' : rankNum}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-500">第 ${rankNum} 名</span>
+                ${slotResultBadge}
+              </div>
+              ${
+                drink
+                  ? `<div class="flex items-center gap-1.5 mt-0.5">
+                       <span class="text-base">${escapeHtml(drink.icon || '🥤')}</span>
+                       <span class="font-bold text-sm sm:text-base text-slate-900 truncate">${escapeHtml(drink.name)}</span>
+                     </div>`
+                  : `<div class="text-xs text-slate-400 mt-0.5">
+                       ${selectedDrinkIdForTap && !appState.isLocked ? '點擊此處放入已選飲品' : '尚未放入飲品（拖曳或點擊配對）'}
+                     </div>`
+              }
+              ${
+                isRevealed && officialDrink
+                  ? `<div class="text-[11px] text-amber-700 font-semibold mt-1">
+                       <i class="fa-solid fa-award mr-1"></i>官方公布：${escapeHtml(officialDrink.name)}
+                     </div>`
+                  : ''
+              }
+            </div>
+          </div>
+
+          <div class="shrink-0">
+            ${
+              drink && !appState.isLocked
+                ? `<button onclick="event.stopPropagation(); removeDrinkFromSlot(${i})" title="移除此飲品"
+                     class="w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition flex items-center justify-center">
+                     <i class="fa-solid fa-xmark"></i>
+                   </button>`
+                : ''
+            }
+          </div>
+        `;
+        slotsContainer.appendChild(slotEl);
+      }
+
+      document.getElementById('guest-filled-count').textContent = filledCount;
+
+      // 底部前 5 強
+      document.getElementById('guest-total-players').textContent = leaderboard.length;
+      const miniBoard = document.getElementById('guest-mini-leaderboard');
+      miniBoard.innerHTML = '';
+
+      if (leaderboard.length === 0) {
+        miniBoard.innerHTML = `<div class="col-span-full text-center py-4 text-xs text-slate-400">尚無來賓提交預測，搶先成為第一位預測神人吧！</div>`;
+      } else {
+        leaderboard.slice(0, 5).forEach((p, idx) => {
+          const isMe = p.id === guestPlayerId;
+          const card = document.createElement('div');
+          card.className = `p-3 rounded-xl border ${isMe ? 'border-amber-400 bg-amber-50' : 'border-stone-200 bg-stone-50'} flex items-center justify-between`;
+          card.innerHTML = `
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-6 h-6 rounded-full ${idx === 0 ? 'gold-gradient-bg text-slate-950 font-black' : 'bg-slate-800 text-white font-bold'} text-xs flex items-center justify-center shrink-0">
+                ${idx + 1}
+              </span>
+              <span class="text-xs font-bold text-slate-900 truncate">${escapeHtml(p.name)}</span>
+            </div>
+            <span class="text-sm font-extrabold text-amber-700 font-display ml-2">${p.totalScore}</span>
+          `;
+          miniBoard.appendChild(card);
+        });
+      }
+    }
+
+    function assignDrinkToSlot(drinkId, targetSlotIndex) {
+      if (appState.isLocked) return;
+      const existingIdx = localGuestSlots.indexOf(drinkId);
+      if (existingIdx !== -1) localGuestSlots[existingIdx] = null;
+      localGuestSlots[targetSlotIndex] = drinkId;
+      selectedDrinkIdForTap = null;
+      renderAllViews();
+    }
+
+    window.removeDrinkFromSlot = function(slotIndex) {
+      if (appState.isLocked) return;
+      localGuestSlots[slotIndex] = null;
+      renderAllViews();
+    };
+
+    window.resetGuestSelection = function() {
+      if (appState.isLocked) return;
+      localGuestSlots = new Array(appState.drinks.length).fill(null);
+      selectedDrinkIdForTap = null;
+      renderAllViews();
+      showToast('已清空您的預測欄位', 'info');
+    };
+
+    window.autoFillGuestPrediction = function() {
+      if (appState.isLocked) return;
+      const shuffled = [...appState.drinks].sort(() => Math.random() - 0.5);
+      localGuestSlots = shuffled.map(d => d.id);
+      selectedDrinkIdForTap = null;
+      renderAllViews();
+      showToast('已為您隨機填入靈感排名！', 'success');
+    };
+
+    window.submitGuestPrediction = async function() {
+      if (appState.isLocked) {
+        showToast('主持人已鎖定預測，無法再修改！', 'error');
+        return;
+      }
+      const nicknameInput = document.getElementById('guest-nickname');
+      const nickname = nicknameInput.value.trim();
+      if (!nickname) {
+        nicknameInput.focus();
+        showToast('請先輸入您的來賓暱稱或桌號！', 'warning');
+        return;
+      }
+      if (localGuestSlots.some(slot => !slot)) {
+        showToast(`請先將全部 ${appState.drinks.length} 杯飲品都排入名次喔！`, 'warning');
+        return;
+      }
+
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.players[guestPlayerId] = {
+        id: guestPlayerId,
+        name: nickname,
+        predictions: [...localGuestSlots],
+        updatedAt: Date.now()
+      };
+
+      await persistState(nextState);
+      showToast(`太棒了，${nickname}！您的預測榜單已成功送出！`, 'success');
+    };
+
+    // =========================================================================
+    // 7. 大螢幕開獎與排行榜 (STAGE VIEW) 渲染
+    // =========================================================================
+    function renderStageView(leaderboard) {
+      const totalRanks = appState.drinks.length;
+      const lockEl = document.getElementById('stage-lock-status');
+      if (appState.isLocked) {
+        lockEl.textContent = '預測已鎖定 · 開獎中';
+        lockEl.className = 'text-sm font-bold ceremony-accent-text mt-0.5';
+      } else {
+        lockEl.textContent = '開放來賓預測中';
+        lockEl.className = 'text-sm font-bold text-emerald-300 mt-0.5';
+      }
+
+      document.getElementById('stage-player-count').textContent = leaderboard.length;
+      document.getElementById('stage-reveal-progress').textContent = appState.revealedRanks.length;
+      document.getElementById('stage-reveal-total').textContent = totalRanks;
+      document.getElementById('stage-drinks-count').textContent = totalRanks;
+
+      // 左欄：飲品池
+      const poolEl = document.getElementById('stage-drinks-pool');
+      poolEl.innerHTML = '';
+      appState.drinks.forEach(drink => {
+        let wonRank = null;
+        appState.revealedRanks.forEach(r => {
+          if (appState.officialRanks[r - 1] === drink.id) wonRank = r;
+        });
+
+        const item = document.createElement('div');
+        item.className = `p-3 rounded-xl border transition-all flex items-center justify-between gap-2 ${
+          wonRank
+            ? 'bg-white/15 ceremony-accent-border ceremony-accent-text'
+            : 'bg-black/25 border-white/10 text-white/85'
+        }`;
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="text-xl">${escapeHtml(drink.icon || '🥤')}</span>
+            <div class="min-w-0">
+              <div class="font-bold text-sm truncate">${escapeHtml(drink.name)}</div>
+              <div class="text-[11px] opacity-65 truncate">${escapeHtml(drink.tag || '')}</div>
+            </div>
+          </div>
+          ${
+            wonRank
+              ? `<span class="px-2 py-0.5 rounded gold-gradient-bg text-slate-950 font-black text-xs shrink-0">
+                   第 ${wonRank} 名
+                 </span>`
+              : `<span class="text-[11px] text-white/40 shrink-0">待揭曉</span>`
+          }
+        `;
+        poolEl.appendChild(item);
+      });
+
+      // 中欄：第 1 ~ N 名榮耀揭曉台
+      const podiumEl = document.getElementById('stage-podium-list');
+      podiumEl.innerHTML = '';
+
+      for (let rank = 1; rank <= totalRanks; rank++) {
+        const isRevealed = appState.revealedRanks.includes(rank);
+        const drinkId = appState.officialRanks[rank - 1];
+        const drink = appState.drinks.find(d => d.id === drinkId);
+
+        const isTop3 = rank <= 3;
+        const badgeClass = rank === 1
+          ? 'gold-gradient-bg text-slate-950 shadow-lg'
+          : rank === 2
+            ? 'bg-slate-200 text-slate-900'
+            : rank === 3
+              ? 'bg-amber-600 text-white'
+              : 'bg-black/40 ceremony-accent-text border ceremony-accent-border';
+
+        const row = document.createElement('div');
+        row.className = `p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${
+          isRevealed
+            ? rank === 1
+              ? 'bg-white/20 border-2 ceremony-accent-border animate-reveal shadow-xl'
+              : 'bg-white/10 ceremony-accent-border animate-reveal'
+            : 'bg-black/25 border-white/10 opacity-75'
+        }`;
+
+        row.innerHTML = `
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div class="w-11 h-11 rounded-xl ${badgeClass} flex flex-col items-center justify-center shrink-0">
+              ${rank === 1 ? '<i class="fa-solid fa-crown text-sm"></i>' : ''}
+              <span class="font-display font-black ${rank === 1 ? 'text-xs' : 'text-base'}">NO.${rank}</span>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold tracking-wider uppercase ${isTop3 ? 'ceremony-accent-text' : 'text-white/60'}">
+                ${rank === 1 ? '年度金萃總冠軍' : rank === 2 ? '年度銀賞亞軍' : rank === 3 ? '年度銅賞季軍' : `榮耀第 ${rank} 名`}
+              </div>
+              ${
+                isRevealed && drink
+                  ? `<div class="flex items-center gap-2 mt-0.5">
+                       <span class="text-xl">${escapeHtml(drink.icon || '🥤')}</span>
+                       <span class="font-serif-title font-bold text-base sm:text-lg text-white truncate">${escapeHtml(drink.name)}</span>
+                     </div>`
+                  : `<div class="flex items-center gap-2 mt-0.5 text-white/45">
+                       <i class="fa-solid fa-circle-question"></i>
+                       <span class="text-sm tracking-widest font-semibold">即將榮耀揭曉...</span>
+                     </div>`
+              }
+            </div>
+          </div>
+
+          <div class="shrink-0">
+            ${
+              isRevealed
+                ? `<span class="px-2.5 py-1 rounded-full bg-white/15 border ceremony-accent-border ceremony-accent-text text-xs font-bold">
+                     <i class="fa-solid fa-check mr-1"></i>已揭曉
+                   </span>`
+                : `<span class="w-2.5 h-2.5 rounded-full bg-white/25 inline-block"></span>`
+            }
+          </div>
+        `;
+        podiumEl.appendChild(row);
+      }
+
+      // 右欄：排行榜
+      const bonusIndicator = document.getElementById('stage-bonus-indicator');
+      if (appState.bonus.applied) bonusIndicator.classList.remove('hidden');
+      else bonusIndicator.classList.add('hidden');
+
+      const boardEl = document.getElementById('stage-leaderboard');
+      boardEl.innerHTML = '';
+
+      if (leaderboard.length === 0) {
+        boardEl.innerHTML = `
+          <div class="text-center py-12 text-white/55">
+            <i class="fa-solid fa-users-viewfinder text-3xl mb-2 ceremony-accent-text"></i>
+            <p class="text-sm">等待現場來賓掃碼送出預測名單...</p>
+          </div>
+        `;
+      } else {
+        leaderboard.forEach((player, index) => {
+          const rank = index + 1;
+          const hasBonus = player.bonusAwarded > 0;
+          const card = document.createElement('div');
+          card.className = `p-3 rounded-xl border transition-all flex items-center justify-between gap-2 ${
+            hasBonus
+              ? 'bg-white/20 border-2 ceremony-accent-border shadow-lg'
+              : rank === 1
+                ? 'bg-white/15 ceremony-accent-border'
+                : 'bg-black/25 border-white/10'
+          }`;
+
+          card.innerHTML = `
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg ${
+                rank === 1 ? 'gold-gradient-bg text-slate-950 font-black' : 'bg-white/15 ceremony-accent-text font-bold'
+              } flex items-center justify-center text-sm shrink-0">
+                ${rank === 1 ? '<i class="fa-solid fa-crown"></i>' : rank}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-bold text-sm text-white truncate">${escapeHtml(player.name)}</span>
+                  ${hasBonus ? `<span class="px-1.5 py-0.5 rounded gold-gradient-bg text-slate-950 font-black text-[10px] shrink-0">+${player.bonusAwarded} 加分</span>` : ''}
+                </div>
+                <div class="text-[11px] text-white/65">
+                  完全命中 ${player.exactHits} 次 · 基礎分 ${player.baseScore}
+                </div>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="text-lg font-black font-display ${hasBonus || rank === 1 ? 'ceremony-accent-text' : 'text-white'}">
+                ${player.totalScore}
+              </div>
+              <div class="text-[10px] text-white/50">PTS</div>
+            </div>
+          `;
+          boardEl.appendChild(card);
+        });
+      }
+    }
+
+    // =========================================================================
+    // 8. 主持人後台 (ADMIN VIEW) 渲染與控場功能
+    // =========================================================================
+    window.verifyAdminPassword = function() {
+      const input = document.getElementById('admin-password-input');
+      if (input.value.trim() === '8888') {
+        isAdminAuthenticated = true;
+        document.getElementById('admin-login-box').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        renderAllViews();
+        showToast('歡迎回來，主持人！已解鎖控場後台', 'success');
+      } else {
+        showToast('密碼錯誤，請輸入預設密碼 8888', 'error');
+        input.value = '';
+        input.focus();
+      }
+    };
+
+    function renderAdminView(leaderboard, maxBaseScore) {
+      const totalDrinks = appState.drinks.length;
+
+      // 鎖定按鈕狀態
+      const lockBtn = document.getElementById('admin-btn-lock');
+      const lockText = document.getElementById('admin-lock-text');
+      if (appState.isLocked) {
+        lockBtn.className = 'px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 shadow gold-gradient-bg text-slate-950';
+        lockText.textContent = '已鎖定（點擊重新開放）';
+      } else {
+        lockBtn.className = 'px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 shadow bg-emerald-600 text-white hover:bg-emerald-500';
+        lockText.textContent = '開放預測中（點擊鎖定）';
+      }
+
+      // 揭曉進度
+      const revealedCount = appState.revealedRanks.length;
+      document.getElementById('admin-rank-total-hint').textContent = totalDrinks;
+      document.getElementById('admin-reveal-stat').textContent = `${revealedCount} / ${totalDrinks}`;
+
+      const nextBtn = document.getElementById('btn-reveal-next');
+      const nextBtnText = document.getElementById('btn-reveal-next-text');
+      let nextRankToReveal = null;
+      for (let r = totalDrinks; r >= 1; r--) {
+        if (!appState.revealedRanks.includes(r)) {
+          nextRankToReveal = r;
+          break;
+        }
+      }
+
+      if (nextRankToReveal !== null) {
+        nextBtn.disabled = false;
+        nextBtn.classList.remove('opacity-50');
+        nextBtnText.textContent = nextRankToReveal === 1
+          ? '揭曉最終總冠軍（第 1 名）！'
+          : `揭曉下一名（第 ${nextRankToReveal} 名）`;
+      } else {
+        nextBtn.disabled = true;
+        nextBtn.classList.add('opacity-50');
+        nextBtnText.textContent = `全部 ${totalDrinks} 個名次已揭曉完畢`;
+      }
+
+      // 官方排名設定列
+      const officialContainer = document.getElementById('admin-official-ranks');
+      officialContainer.innerHTML = '';
+
+      for (let i = 0; i < totalDrinks; i++) {
+        const rankNum = i + 1;
+        const selectedDrinkId = appState.officialRanks[i];
+        const isRevealed = appState.revealedRanks.includes(rankNum);
+
+        const optionsHtml = appState.drinks.map(d =>
+          `<option value="${d.id}" ${d.id === selectedDrinkId ? 'selected' : ''}>${escapeHtml(d.icon || '🥤')} ${escapeHtml(d.name)}</option>`
+        ).join('');
+
+        const row = document.createElement('div');
+        row.className = `p-3 rounded-xl border flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 ${
+          isRevealed ? 'bg-amber-50 border-amber-400' : 'bg-stone-50 border-stone-200'
+        }`;
+
+        row.innerHTML = `
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="w-9 h-8 rounded-lg ${rankNum === 1 ? 'gold-gradient-bg text-slate-950 font-black' : 'ceremony-theme-bg ceremony-accent-text font-bold'} text-xs flex items-center justify-center">
+              第${rankNum}名
+            </span>
+          </div>
+          <select onchange="updateOfficialRank(${i}, this.value)"
+            class="flex-1 min-w-[150px] px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-sm font-bold text-slate-900 focus:outline-none">
+            ${optionsHtml}
+          </select>
+          <button onclick="toggleSingleRankReveal(${rankNum})"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
+              isRevealed
+                ? 'gold-gradient-bg text-slate-950'
+                : 'ceremony-theme-bg ceremony-accent-text hover:opacity-90'
+            }">
+            ${isRevealed ? '<i class="fa-solid fa-eye mr-1"></i>已公布（收回）' : '<i class="fa-solid fa-eye-slash mr-1"></i>點擊公布'}
+          </button>
+        `;
+        officialContainer.appendChild(row);
+      }
+
+      // 最高分加分設定區
+      document.getElementById('admin-bonus-points').value = appState.bonus.points;
+      document.getElementById('admin-bonus-mode').value = appState.bonus.mode;
+      document.getElementById('current-top-score-display').textContent = `目前最高基礎分：${maxBaseScore} 分`;
+
+      const bonusBadge = document.getElementById('admin-bonus-status-badge');
+      if (appState.bonus.applied) {
+        bonusBadge.className = 'text-xs px-2.5 py-1 rounded-full gold-gradient-bg text-slate-950 font-extrabold';
+        bonusBadge.textContent = `已套用 +${appState.bonus.points} 分`;
+      } else {
+        bonusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-bold';
+        bonusBadge.textContent = '尚未套用加分';
+      }
+
+      const candidatesEl = document.getElementById('admin-bonus-candidates');
+      candidatesEl.innerHTML = '';
+
+      if (leaderboard.length === 0) {
+        candidatesEl.innerHTML = `<div class="text-xs text-slate-400 py-2">尚無參賽來賓資料</div>`;
+      } else if (appState.bonus.mode === 'auto_top') {
+        document.getElementById('bonus-target-label').textContent = '自動偵測最高分玩家（含同分）：';
+        const topPlayers = leaderboard.filter(p => p.baseScore === maxBaseScore && maxBaseScore > 0);
+        if (topPlayers.length === 0) {
+          candidatesEl.innerHTML = `<div class="text-xs text-slate-500 py-1">目前所有玩家基礎分皆為 0 分（請先公布名次）</div>`;
+        } else {
+          topPlayers.forEach(p => {
+            candidatesEl.innerHTML += `
+              <div class="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-amber-300 text-xs">
+                <span class="font-bold text-slate-900"><i class="fa-solid fa-crown text-amber-500 mr-1.5"></i>${escapeHtml(p.name)}</span>
+                <span class="font-bold text-amber-700">基礎 ${p.baseScore} 分 → 加分後 ${p.baseScore + Number(appState.bonus.points)} 分</span>
+              </div>
+            `;
+          });
+        }
+      } else {
+        document.getElementById('bonus-target-label').textContent = '請勾選要獲得額外加分的玩家：';
+        leaderboard.forEach(p => {
+          const checked = (appState.bonus.manualPlayerIds || []).includes(p.id) ? 'checked' : '';
+          candidatesEl.innerHTML += `
+            <label class="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs cursor-pointer hover:bg-amber-50">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" ${checked} onchange="toggleManualBonusPlayer('${p.id}')" class="rounded">
+                <span class="font-bold text-slate-900">${escapeHtml(p.name)}</span>
+              </div>
+              <span class="text-slate-500">基礎分 ${p.baseScore} 分</span>
+            </label>
+          `;
+        });
+      }
+
+      // 計分與標題設定值
+      document.getElementById('admin-event-title-input').value = appState.eventTitle;
+      document.getElementById('score-exact').value = appState.scoring.exact;
+      document.getElementById('score-diff1').value = appState.scoring.diff1;
+      document.getElementById('score-diff2').value = appState.scoring.diff2;
+
+      // 主題顏色控制項同步
+      const t = appState.theme;
+      const solidBtn = document.getElementById('theme-mode-solid');
+      const gradBtn = document.getElementById('theme-mode-gradient');
+      const c2Wrap = document.getElementById('theme-c2-wrapper');
+      const angleWrap = document.getElementById('theme-angle-wrapper');
+
+      if (t.mode === 'solid') {
+        solidBtn.className = 'px-3 py-1 rounded-md text-xs font-bold bg-white text-slate-900 shadow';
+        gradBtn.className = 'px-3 py-1 rounded-md text-xs font-bold text-slate-600';
+        c2Wrap.classList.add('opacity-40', 'pointer-events-none');
+        angleWrap.classList.add('opacity-40', 'pointer-events-none');
+      } else {
+        gradBtn.className = 'px-3 py-1 rounded-md text-xs font-bold bg-white text-slate-900 shadow';
+        solidBtn.className = 'px-3 py-1 rounded-md text-xs font-bold text-slate-600';
+        c2Wrap.classList.remove('opacity-40', 'pointer-events-none');
+        angleWrap.classList.remove('opacity-40', 'pointer-events-none');
+      }
+
+      document.getElementById('theme-color-1').value = t.color1;
+      document.getElementById('theme-color-1-hex').textContent = t.color1.toUpperCase();
+      document.getElementById('theme-color-2').value = t.color2;
+      document.getElementById('theme-color-2-hex').textContent = t.color2.toUpperCase();
+      document.getElementById('theme-accent-color').value = t.accent;
+      document.getElementById('theme-accent-hex').textContent = t.accent.toUpperCase();
+      document.getElementById('theme-gradient-angle').value = t.angle || '135deg';
+
+      // 飲品編輯器（支援增減）
+      document.getElementById('admin-drinks-count').textContent = totalDrinks;
+      const editorEl = document.getElementById('admin-drinks-editor');
+      editorEl.innerHTML = '';
+      appState.drinks.forEach((drink, idx) => {
+        editorEl.innerHTML += `
+          <div class="grid grid-cols-12 gap-2 items-center bg-stone-50 p-2 rounded-xl border border-stone-200">
+            <input type="text" id="edit-drink-icon-${idx}" value="${escapeHtml(drink.icon || '🥤')}" title="圖示 Emoji"
+              class="col-span-2 px-1.5 py-1.5 rounded-lg border border-slate-300 bg-white text-center text-base">
+            <input type="text" id="edit-drink-name-${idx}" value="${escapeHtml(drink.name)}" placeholder="飲品名稱"
+              class="col-span-5 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900">
+            <input type="text" id="edit-drink-tag-${idx}" value="${escapeHtml(drink.tag || '')}" placeholder="特色標籤"
+              class="col-span-4 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-600">
+            <button onclick="removeDrinkItem('${drink.id}')" title="刪除此飲品"
+              class="col-span-1 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        `;
+      });
+
+      // 參賽玩家名單
+      document.getElementById('admin-players-count').textContent = leaderboard.length;
+      const playersTable = document.getElementById('admin-players-table');
+      playersTable.innerHTML = '';
+
+      if (leaderboard.length === 0) {
+        playersTable.innerHTML = `<div class="col-span-full text-center py-8 text-xs text-slate-400">尚無來賓提交預測，可點擊上方「產生 8 位模擬來賓」進行測試。</div>`;
+      } else {
+        leaderboard.forEach((p, idx) => {
+          const top1DrinkId = p.predictions ? p.predictions[0] : null;
+          const top1Drink = appState.drinks.find(d => d.id === top1DrinkId);
+          playersTable.innerHTML += `
+            <div class="p-3 rounded-xl border border-stone-200 bg-stone-50 flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-extrabold text-slate-900 truncate">#${idx + 1} ${escapeHtml(p.name)}</span>
+                  ${p.bonusAwarded > 0 ? `<span class="px-1.5 py-0.5 rounded gold-gradient-bg text-slate-950 font-bold text-[10px] shrink-0">+${p.bonusAwarded}</span>` : ''}
+                </div>
+                <div class="text-[11px] text-slate-500 truncate mt-0.5">
+                  預測冠軍：${top1Drink ? escapeHtml(top1Drink.name) : '-'} · 命中 ${p.exactHits}
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="font-display font-black text-sm text-slate-900">${p.totalScore} 分</span>
+                <button onclick="deletePlayer('${p.id}')" class="text-slate-400 hover:text-red-600 transition p-1" title="移除此玩家">
+                  <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        });
+      }
+    }
+
+    // =========================================================================
+    // 9. 後台互動操作函式（含飲品增減、主題配色、QR Code 產生）
+    // =========================================================================
+    window.addNewDrinkItem = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      // 先保留當前輸入框尚未儲存的文字修改
+      syncInputsIntoDrinksArray(nextState.drinks);
+
+      const newId = 'd_' + Date.now().toString(36);
+      const icons = ['🧋', '🍵', '🍹', '🍋', '🍓', '🍑', '🥥', '☕', '🥤'];
+      const randomIcon = icons[nextState.drinks.length % icons.length];
+
+      nextState.drinks.push({
+        id: newId,
+        name: `新入圍飲品 #${nextState.drinks.length + 1}`,
+        tag: '人氣推薦',
+        desc: '現場特調精選飲品',
+        icon: randomIcon
+      });
+      nextState.officialRanks.push(newId);
+
+      await persistState(nextState);
+      showToast(`已新增飲品！目前共 ${nextState.drinks.length} 項`, 'success');
+    };
+
+    window.removeDrinkItem = async function(drinkId) {
+      if (appState.drinks.length <= 2) {
+        showToast('至少需要保留 2 款飲品才能進行排名預測喔！', 'warning');
+        return;
+      }
+      const nextState = JSON.parse(JSON.stringify(appState));
+      syncInputsIntoDrinksArray(nextState.drinks);
+
+      nextState.drinks = nextState.drinks.filter(d => d.id !== drinkId);
+      nextState.officialRanks = nextState.officialRanks.filter(id => id !== drinkId);
+      // 清除超出新長度的已揭曉名次
+      nextState.revealedRanks = nextState.revealedRanks.filter(r => r <= nextState.drinks.length);
+
+      await persistState(nextState);
+      showToast(`已移除飲品，排名欄位自動調整為 ${nextState.drinks.length} 名`, 'info');
+    };
+
+    function syncInputsIntoDrinksArray(drinksArr) {
+      drinksArr.forEach((drink, idx) => {
+        const iconEl = document.getElementById(`edit-drink-icon-${idx}`);
+        const nameEl = document.getElementById(`edit-drink-name-${idx}`);
+        const tagEl = document.getElementById(`edit-drink-tag-${idx}`);
+        if (iconEl && iconEl.value.trim()) drink.icon = iconEl.value.trim();
+        if (nameEl && nameEl.value.trim()) drink.name = nameEl.value.trim();
+        if (tagEl) drink.tag = tagEl.value.trim();
+      });
+    }
+
+    window.saveDrinksList = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      syncInputsIntoDrinksArray(nextState.drinks);
+      await persistState(nextState);
+      showToast('已儲存所有飲品名稱與圖示變更！', 'success');
+    };
+
+    // 主題配色操作
+    window.setThemeMode = async function(mode) {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.theme.mode = mode;
+      await persistState(nextState);
+    };
+
+    window.updateThemeFromInputs = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.theme.color1 = document.getElementById('theme-color-1').value;
+      nextState.theme.color2 = document.getElementById('theme-color-2').value;
+      nextState.theme.accent = document.getElementById('theme-accent-color').value;
+      nextState.theme.angle = document.getElementById('theme-gradient-angle').value;
+      await persistState(nextState);
+    };
+
+    window.applyThemePreset = async function(mode, color1, color2, accent, angle) {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.theme = { mode, color1, color2, accent, angle };
+      await persistState(nextState);
+      showToast('已套用典禮主題配色！', 'success');
+    };
+
+    // QR Code 視窗與生成
+    window.openQrModal = function() {
+      const modal = document.getElementById('qr-modal');
+      const urlInput = document.getElementById('qr-url-input');
+      const currentHref = window.location.href.split('#')[0];
+      if (!urlInput.value) {
+        urlInput.value = currentHref;
+      }
+      renderQrCode(urlInput.value);
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.closeQrModal = function() {
+      const modal = document.getElementById('qr-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    window.regenerateQrFromInput = function() {
+      const val = document.getElementById('qr-url-input').value.trim();
+      renderQrCode(val || window.location.href);
+    };
+
+    function renderQrCode(targetUrl) {
+      const canvas = document.getElementById('qr-canvas');
+      const fallbackImg = document.getElementById('qr-fallback-img');
+      const warnEl = document.getElementById('qr-local-warning');
+
+      if (targetUrl.startsWith('file://')) {
+        warnEl.classList.remove('hidden');
+      } else {
+        warnEl.classList.add('hidden');
+      }
+
+      if (typeof QRious === 'function') {
+        canvas.classList.remove('hidden');
+        fallbackImg.classList.add('hidden');
+        new QRious({
+          element: canvas,
+          value: targetUrl,
+          size: 210,
+          level: 'M',
+          foreground: '#0F172A',
+          background: '#FFFFFF'
+        });
+      } else {
+        // 離線或 CDN 未載入時的備援 API
+        canvas.classList.add('hidden');
+        fallbackImg.classList.remove('hidden');
+        fallbackImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=210x210&data=${encodeURIComponent(targetUrl)}`;
+      }
+    }
+
+    window.copyQrUrl = function() {
+      const input = document.getElementById('qr-url-input');
+      input.select();
+      document.execCommand('copy');
+      showToast('已複製活動網址到剪貼簿！', 'success');
+    };
+
+    // 其他後台控制項
+    window.togglePredictionLock = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.isLocked = !nextState.isLocked;
+      await persistState(nextState);
+      showToast(nextState.isLocked ? '已鎖定預測！來賓端無法再修改' : '已重新開放來賓預測', 'info');
+    };
+
+    window.updateOfficialRank = async function(slotIdx, newDrinkId) {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      const existingIdx = nextState.officialRanks.indexOf(newDrinkId);
+      if (existingIdx !== -1 && existingIdx !== slotIdx) {
+        nextState.officialRanks[existingIdx] = nextState.officialRanks[slotIdx];
+      }
+      nextState.officialRanks[slotIdx] = newDrinkId;
+      await persistState(nextState);
+      showToast(`已更新第 ${slotIdx + 1} 名官方得獎飲品`, 'success');
+    };
+
+    window.randomizeOfficialRanking = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.officialRanks = [...nextState.drinks].sort(() => Math.random() - 0.5).map(d => d.id);
+      await persistState(nextState);
+      showToast('已隨機排定官方名次順序！', 'success');
+    };
+
+    window.revealNextRank = async function() {
+      const total = appState.drinks.length;
+      for (let r = total; r >= 1; r--) {
+        if (!appState.revealedRanks.includes(r)) {
+          const nextState = JSON.parse(JSON.stringify(appState));
+          nextState.revealedRanks.push(r);
+          if (!nextState.isLocked) nextState.isLocked = true;
+          await persistState(nextState);
+          const drink = nextState.drinks.find(d => d.id === nextState.officialRanks[r - 1]);
+          showToast(`榮耀揭曉！第 ${r} 名：${drink ? drink.name : ''}`, 'success');
+          return;
+        }
+      }
+    };
+
+    window.toggleSingleRankReveal = async function(rankNum) {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      const idx = nextState.revealedRanks.indexOf(rankNum);
+      if (idx === -1) nextState.revealedRanks.push(rankNum);
+      else nextState.revealedRanks.splice(idx, 1);
+      await persistState(nextState);
+    };
+
+    window.revealAllRanks = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      const all = [];
+      for (let r = nextState.drinks.length; r >= 1; r--) all.push(r);
+      nextState.revealedRanks = all;
+      nextState.isLocked = true;
+      await persistState(nextState);
+      showToast('已揭曉全部官方名次！', 'success');
+    };
+
+    window.hideAllRanks = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.revealedRanks = [];
+      await persistState(nextState);
+      showToast('已隱藏所有揭曉狀態', 'info');
+    };
+
+    window.updateBonusSettings = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.bonus.points = Number(document.getElementById('admin-bonus-points').value || 0);
+      nextState.bonus.mode = document.getElementById('admin-bonus-mode').value;
+      await persistState(nextState);
+    };
+
+    window.toggleManualBonusPlayer = async function(playerId) {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      const list = nextState.bonus.manualPlayerIds || [];
+      const idx = list.indexOf(playerId);
+      if (idx === -1) list.push(playerId);
+      else list.splice(idx, 1);
+      nextState.bonus.manualPlayerIds = list;
+      await persistState(nextState);
+    };
+
+    window.toggleApplyBonus = async function(apply) {
+      const pts = Number(document.getElementById('admin-bonus-points').value || 0);
+      const mode = document.getElementById('admin-bonus-mode').value;
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.bonus.points = pts;
+      nextState.bonus.mode = mode;
+      nextState.bonus.applied = apply;
+      await persistState(nextState);
+      showToast(apply ? `已成功為最高分玩家頒發 +${pts} 額外加分！` : '已取消額外加分', apply ? 'success' : 'info');
+    };
+
+    window.saveGeneralSettings = async function(showNotification = false) {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.eventTitle = document.getElementById('admin-event-title-input').value.trim() || INITIAL_STATE.eventTitle;
+      nextState.scoring.exact = Number(document.getElementById('score-exact').value || 0);
+      nextState.scoring.diff1 = Number(document.getElementById('score-diff1').value || 0);
+      nextState.scoring.diff2 = Number(document.getElementById('score-diff2').value || 0);
+      await persistState(nextState);
+      if (showNotification) showToast('活動標題與計分規則已儲存！', 'success');
+    };
+
+    window.generateMockPlayers = async function() {
+      const mockNames = [
+        'VIP桌-林經理', '茶飲達人小美', '波霸控阿傑', 'A3桌-陳總監',
+        '手搖飲品鑑師', 'B1桌-張小姐', '奶蓋狂熱者', '微糖去冰派'
+      ];
+      const nextState = JSON.parse(JSON.stringify(appState));
+      const drinkIds = nextState.drinks.map(d => d.id);
+
+      mockNames.forEach((name, idx) => {
+        const mockId = 'mock_player_' + (idx + 1);
+        let preds = [...drinkIds].sort(() => Math.random() - 0.5);
+        if (idx === 0) {
+          preds = [...nextState.officialRanks];
+        } else if (idx === 1 && preds.length >= 2) {
+          preds = [...nextState.officialRanks];
+          [preds[0], preds[1]] = [preds[1], preds[0]];
+        }
+        nextState.players[mockId] = {
+          id: mockId,
+          name,
+          predictions: preds,
+          updatedAt: Date.now() + idx * 100
+        };
+      });
+
+      await persistState(nextState);
+      showToast('已產生 8 位模擬來賓預測數據！', 'success');
+    };
+
+    window.deletePlayer = async function(playerId) {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      delete nextState.players[playerId];
+      await persistState(nextState);
+      showToast('已移除該位玩家資料', 'info');
+    };
+
+    window.confirmResetAll = function() {
+      openModal(
+        '確定要重置整場比賽嗎？',
+        '此動作將會清除所有來賓預測紀錄、重置揭曉進度與加分狀態，恢復為全新典禮初始狀態。',
+        async () => {
+          localGuestSlots = new Array(INITIAL_STATE.drinks.length).fill(null);
+          hasLoadedInitialGuestSlots = false;
+          await persistState(JSON.parse(JSON.stringify(INITIAL_STATE)));
+          showToast('已完整重置典禮比賽資料！', 'success');
+        }
+      );
+    };
+
+    window.exportResultsCSV = function() {
+      const { leaderboard } = calculateLeaderboard();
+      if (leaderboard.length === 0) {
+        showToast('目前尚無玩家資料可匯出', 'warning');
+        return;
+      }
+      const headers = ['最終排名', '來賓暱稱', '基礎預測分', '完全命中次數', '最高分額外加分', '最終總積分', '預測冠軍'];
+      const rows = leaderboard.map((p, idx) => {
+        const topDrink = appState.drinks.find(item => item.id === p.predictions[0]);
+        return [
+          idx + 1,
+          `"${p.name.replace(/"/g, '""')}"`,
+          p.baseScore,
+          p.exactHits,
+          p.bonusAwarded,
+          p.totalScore,
+          `"${topDrink ? topDrink.name : ''}"`
+        ].join(',');
+      });
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `飲料頒獎典禮_最終成績單_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      showToast('最終成績單 CSV 已匯出下載！', 'success');
+    };
+
+    // =========================================================================
+    // 10. UI 輔助工具
+    // =========================================================================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-slate-900 text-amber-300 border-amber-400',
+        warning: 'bg-amber-600 text-white border-amber-300',
+        error: 'bg-red-700 text-white border-red-400',
+        info: 'bg-slate-800 text-white border-slate-600'
+      };
+      const icons = {
+        success: 'fa-circle-check',
+        warning: 'fa-triangle-exclamation',
+        error: 'fa-circle-xmark',
+        info: 'fa-circle-info'
+      };
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all duration-300 ${colors[type] || colors.info}`;
+      toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i><span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    let modalCallback = null;
+    function openModal(title, message, onConfirm) {
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-message').textContent = message;
+      modalCallback = onConfirm;
+      const modal = document.getElementById('custom-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    window.closeModal = function() {
+      const modal = document.getElementById('custom-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modalCallback = null;
+    };
+
+    document.getElementById('modal-confirm-btn').addEventListener('click', async () => {
+      if (modalCallback) await modalCallback();
+      closeModal();
+    });
+
+    function triggerConfetti(grand = false) {
+      if (typeof confetti !== 'function') return;
+      confetti({
+        particleCount: grand ? 120 : 50,
+        spread: grand ? 85 : 55,
+        origin: { y: 0.65 },
+        colors: [appState.theme.accent, '#F3D060', '#FFFFFF']
+      });
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      applyThemeStyles(appState.theme);
+      switchView('guest');
+      initSyncEngine();
+    });
+  </script>
+</body>
+</html>
