@@ -14,23 +14,33 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-  <!-- QRious Lightweight Canvas QR Code Library (with fallback) -->
+  <!-- QRious Lightweight Canvas QR Code Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
   <style>
     :root {
+      /* 主視覺典禮卡片底色 */
       --theme-bg-1: #0B2B26;
       --theme-bg-2: #164A41;
       --theme-accent: #D4AF37;
       --theme-accent-bright: #F3D060;
       --theme-bg-style: linear-gradient(135deg, #0B2B26 0%, #164A41 100%);
+
+      /* 獨立三區配色變數 */
+      --page-bg-style: #FAF7F0;
+      --header-bg-style: linear-gradient(135deg, #0B2B26 0%, #164A41 100%);
+      --header-text-color: #FAF7F0;
+      --btn-bg-style: linear-gradient(135deg, #0B2B26 0%, #164A41 100%);
+      --btn-text-color: #F3D060;
     }
 
     body {
       font-family: 'Noto Sans TC', 'Inter', sans-serif;
-      background-color: #FAF7F0;
+      background: var(--page-bg-style);
+      background-attachment: fixed;
       color: #1A2421;
       overflow-x: hidden;
+      transition: background 0.35s ease;
     }
 
     .font-serif-title {
@@ -41,10 +51,27 @@
       font-family: 'Inter', 'Noto Sans TC', sans-serif;
     }
 
-    /* 動態主題背景與強調色 */
+    /* 典禮主視覺區塊背景（橫幅、大螢幕舞台） */
     .ceremony-theme-bg {
       background: var(--theme-bg-style);
       transition: background 0.4s ease;
+    }
+
+    /* 獨立 Header Bar 樣式 */
+    .ceremony-header-bar {
+      background: var(--header-bg-style);
+      color: var(--header-text-color);
+      transition: background 0.35s ease, color 0.35s ease;
+    }
+
+    /* 獨立主要按鈕樣式 */
+    .ceremony-primary-btn {
+      background: var(--btn-bg-style);
+      color: var(--btn-text-color);
+      transition: background 0.35s ease, color 0.35s ease, transform 0.15s ease, filter 0.15s ease;
+    }
+    .ceremony-primary-btn:hover:not(:disabled) {
+      filter: brightness(1.08);
     }
 
     .ceremony-accent-text {
@@ -84,52 +111,12 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
     ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.55); border-radius: 9999px; }
-  /* === 獨立區域配色控制 === */
-body.custom-theme-active {
-  background: var(--page-bg) !important;
-  background-attachment: fixed !important;
-  min-height: 100vh;
-}
-
-/* 獨立 Header Bar 樣式 */
-header, nav, .top-header, [data-role="header-bar"] {
-  background: var(--header-bg, rgba(15, 23, 42, 0.85)) !important;
-  color: var(--header-text, #ffffff) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-header *, nav *, .top-header * {
-  color: inherit;
-}
-
-/* 獨立主要按鈕樣式 */
-button.btn-primary-theme,
-.primary-action-btn,
-button[type="submit"],
-#submitVoteBtn,
-#revealNextBtn,
-#applyBonusBtn,
-#addDrinkBtn {
-  background: var(--btn-bg, #d97706) !important;
-  color: var(--btn-text, #ffffff) !important;
-  border: none !important;
-  transition: transform 0.15s ease, filter 0.15s ease;
-}
-button.btn-primary-theme:hover,
-.primary-action-btn:hover,
-#submitVoteBtn:hover,
-#revealNextBtn:hover,
-#applyBonusBtn:hover {
-  filter: brightness(1.08);
-}
-  
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- 頂部典禮導覽列 -->
-  <header class="ceremony-theme-bg text-[#FAF7F0] border-b ceremony-accent-border sticky top-0 z-40 shadow-lg">
+  <!-- 頂部典禮導覽列 (獨立 Header Bar 配色) -->
+  <header class="ceremony-header-bar border-b ceremony-accent-border sticky top-0 z-40 shadow-lg">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
       <!-- 品牌與典禮標題 -->
       <div class="flex items-center gap-3 min-w-0">
@@ -138,22 +125,22 @@ button.btn-primary-theme:hover,
         </div>
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <h1 id="header-event-title" class="font-serif-title font-bold text-base sm:text-xl tracking-wide ceremony-accent-text truncate">
+            <h1 id="header-event-title" class="font-serif-title font-bold text-base sm:text-xl tracking-wide truncate">
               金萃大賞｜年度飲品頒獎典禮
             </h1>
-            <span id="sync-badge" class="hidden md:inline-flex items-center gap-1.5 text-[11px] px-2.5 py-0.5 rounded-full bg-black/25 ceremony-accent-text border ceremony-accent-border shrink-0">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-              <span id="sync-status-text">即時同步中</span>
+            <span id="sync-badge" class="hidden md:inline-flex items-center gap-1.5 text-[11px] px-2.5 py-0.5 rounded-full bg-black/25 border ceremony-accent-border shrink-0">
+              <span id="sync-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+              <span id="sync-status-text">連線雲端中...</span>
             </span>
           </div>
-          <p class="text-[11px] text-white/70 hidden sm:block truncate">THE GOLDEN BREW AWARDS · 互動預測盛典</p>
+          <p class="text-[11px] opacity-75 hidden sm:block truncate">THE GOLDEN BREW AWARDS · 互動預測盛典</p>
         </div>
       </div>
 
       <!-- 模式切換器 & QR Code 快捷鍵 -->
       <div class="flex items-center gap-2 shrink-0">
         <button onclick="openQrModal()" title="顯示現場掃碼 QR Code"
-          class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition">
+          class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold transition">
           <i class="fa-solid fa-qrcode"></i>
           <span>活動 QR Code</span>
         </button>
@@ -198,7 +185,7 @@ button.btn-primary-theme:hover,
           取消
         </button>
         <button id="modal-confirm-btn"
-          class="px-5 py-2 rounded-xl text-sm font-bold ceremony-theme-bg ceremony-accent-text hover:opacity-95 transition shadow">
+          class="px-5 py-2 rounded-xl text-sm font-bold ceremony-primary-btn transition shadow">
           確定執行
         </button>
       </div>
@@ -230,7 +217,7 @@ button.btn-primary-theme:hover,
       <!-- 網址顯示與自訂輸入 -->
       <div class="text-left bg-slate-50 p-3.5 rounded-xl border border-slate-200 mb-4">
         <label class="block text-[11px] font-bold text-slate-600 mb-1">
-          <i class="fa-solid fa-link mr-1"></i>活動連線網址（若部署至 Netlify 等空間可在此貼上正式網址更新條碼）：
+          <i class="fa-solid fa-link mr-1"></i>活動連線網址（可貼上您的 GitHub Pages 正式網址）：
         </label>
         <div class="flex gap-2">
           <input type="text" id="qr-url-input" oninput="regenerateQrFromInput()"
@@ -240,11 +227,11 @@ button.btn-primary-theme:hover,
           </button>
         </div>
         <p id="qr-local-warning" class="hidden text-[11px] text-amber-700 mt-1.5">
-          <i class="fa-solid fa-triangle-exclamation mr-1"></i>目前為本機檔案路徑 (file://)，上傳至網路空間後貼上 https:// 網址即可讓來賓手機掃描。
+          <i class="fa-solid fa-triangle-exclamation mr-1"></i>目前為本機檔案路徑 (file://)，上傳至 GitHub Pages 後貼上 https:// 網址即可讓來賓手機掃描。
         </p>
       </div>
 
-      <button onclick="closeQrModal()" class="w-full py-3 rounded-xl ceremony-theme-bg ceremony-accent-text font-bold text-sm shadow-md">
+      <button onclick="closeQrModal()" class="w-full py-3 rounded-xl ceremony-primary-btn font-bold text-sm shadow-md">
         完成並關閉
       </button>
     </div>
@@ -307,7 +294,7 @@ button.btn-primary-theme:hover,
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
         <!-- 左側：入圍飲品池 -->
-        <div class="lg:col-span-5 bg-white rounded-2xl p-5 border border-stone-200 shadow-md">
+        <div class="lg:col-span-5 bg-white/95 backdrop-blur-sm rounded-2xl p-5 border border-stone-200 shadow-md">
           <div class="flex items-center justify-between mb-4 pb-3 border-b border-stone-200">
             <div>
               <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
@@ -328,7 +315,7 @@ button.btn-primary-theme:hover,
         </div>
 
         <!-- 右側：第 1 名 ～ 第 N 名預測欄位 -->
-        <div class="lg:col-span-7 bg-white rounded-2xl p-5 border border-stone-200 shadow-md">
+        <div class="lg:col-span-7 bg-white/95 backdrop-blur-sm rounded-2xl p-5 border border-stone-200 shadow-md">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-stone-200">
             <div>
               <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
@@ -355,7 +342,7 @@ button.btn-primary-theme:hover,
               已完成配對：<strong id="guest-filled-count" class="text-slate-900 text-sm">0</strong> / <strong id="guest-filled-total">7</strong> 杯飲品
             </div>
             <button onclick="submitGuestPrediction()" id="btn-submit-prediction"
-              class="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-base ceremony-theme-bg ceremony-accent-text hover:opacity-95 transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              class="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-base ceremony-primary-btn transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
               <i class="fa-solid fa-paper-plane"></i>
               <span id="submit-btn-text">送出我的預測榜單</span>
             </button>
@@ -364,7 +351,7 @@ button.btn-primary-theme:hover,
       </div>
 
       <!-- 來賓端底部：即時戰況與前 5 強 -->
-      <div class="mt-6 bg-white rounded-2xl p-5 border border-stone-200 shadow-sm">
+      <div class="mt-6 bg-white/95 backdrop-blur-sm rounded-2xl p-5 border border-stone-200 shadow-sm">
         <div class="flex items-center justify-between mb-3">
           <h4 class="font-serif-title font-bold text-base text-slate-900">
             <i class="fa-solid fa-crown text-amber-600 mr-1.5"></i>現場即時積分前 5 強
@@ -471,7 +458,7 @@ button.btn-primary-theme:hover,
     <section id="view-admin" class="hidden max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
       <!-- 後台密碼鎖定畫面 -->
-      <div id="admin-login-box" class="max-w-md mx-auto my-12 bg-white rounded-2xl p-8 border-2 ceremony-accent-border shadow-xl text-center">
+      <div id="admin-login-box" class="max-w-md mx-auto my-12 bg-white/95 backdrop-blur-sm rounded-2xl p-8 border-2 ceremony-accent-border shadow-xl text-center">
         <div class="w-16 h-16 rounded-2xl ceremony-theme-bg ceremony-accent-text flex items-center justify-center mx-auto mb-4 shadow-lg">
           <i class="fa-solid fa-shield-halved text-2xl"></i>
         </div>
@@ -483,7 +470,7 @@ button.btn-primary-theme:hover,
             onkeydown="if(event.key==='Enter') verifyAdminPassword()"
             class="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-center text-lg font-bold tracking-widest focus:outline-none focus:border-slate-800">
           <button onclick="verifyAdminPassword()"
-            class="w-full py-3 rounded-xl ceremony-theme-bg ceremony-accent-text font-bold hover:opacity-95 transition shadow-md">
+            class="w-full py-3 rounded-xl ceremony-primary-btn font-bold transition shadow-md">
             解鎖進入後台
           </button>
         </div>
@@ -500,7 +487,7 @@ button.btn-primary-theme:hover,
               <h2 class="font-serif-title text-xl font-bold ceremony-accent-text">典禮流程與即時開獎控制台</h2>
             </div>
             <p class="text-xs text-white/80 mt-1">
-              所有變更將即時同步至「大螢幕開獎頁」與所有「來賓手機畫面」。
+              所有變更將透過 Firebase 雲端即時同步至「大螢幕開獎頁」與所有「來賓手機畫面」。
             </p>
           </div>
 
@@ -546,7 +533,7 @@ button.btn-primary-theme:hover,
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           <!-- 模組 A：官方實際排名設定與「逐步公布」控制 (佔 6 欄) -->
-          <div class="lg:col-span-6 bg-white rounded-2xl p-6 border border-stone-200 shadow-md">
+          <div class="lg:col-span-6 bg-white/95 backdrop-blur-sm rounded-2xl p-6 border border-stone-200 shadow-md">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-4 border-b border-stone-200">
               <div>
                 <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
@@ -568,7 +555,7 @@ button.btn-primary-theme:hover,
               </div>
               <div class="flex flex-wrap gap-2">
                 <button onclick="revealNextRank()" id="btn-reveal-next"
-                  class="px-4 py-2 rounded-lg ceremony-theme-bg ceremony-accent-text hover:opacity-95 font-bold text-xs shadow flex items-center gap-1.5">
+                  class="px-4 py-2 rounded-lg ceremony-primary-btn font-bold text-xs shadow flex items-center gap-1.5">
                   <i class="fa-solid fa-wand-sparkles"></i>
                   <span id="btn-reveal-next-text">揭曉下一名（第 7 名）</span>
                 </button>
@@ -593,7 +580,7 @@ button.btn-primary-theme:hover,
           <div class="lg:col-span-6 space-y-6">
 
             <!-- 最高分玩家額外加分專區 -->
-            <div class="bg-white rounded-2xl p-6 border-2 ceremony-accent-border shadow-md">
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 border-2 ceremony-accent-border shadow-md">
               <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-200">
                 <div>
                   <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
@@ -649,7 +636,7 @@ button.btn-primary-theme:hover,
             </div>
 
             <!-- 計分規則與活動標題設定 -->
-            <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-md">
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 border border-stone-200 shadow-md">
               <h3 class="font-serif-title font-bold text-base text-slate-900 mb-3 flex items-center gap-2">
                 <i class="fa-solid fa-calculator text-amber-600"></i>
                 <span>計分權重與活動標題設定</span>
@@ -677,7 +664,7 @@ button.btn-primary-theme:hover,
                 </div>
                 <div class="flex items-end">
                   <button onclick="saveGeneralSettings(true)"
-                    class="w-full py-2 px-3 rounded-lg ceremony-theme-bg ceremony-accent-text text-xs font-bold hover:opacity-95 transition">
+                    class="w-full py-2 px-3 rounded-lg ceremony-primary-btn text-xs font-bold transition">
                     儲存規則設定
                   </button>
                 </div>
@@ -687,118 +674,214 @@ button.btn-primary-theme:hover,
           </div>
         </div>
 
-        <!-- 主控網格第二排：頁面主題配色自訂 (單色/雙色漸層) & 飲品品項增減管理 -->
+        <!-- 主控網格第二排：獨立三區主題配色 & 飲品品項增減管理 -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          <!-- 模組 C：頁面主題顏色自訂（單色 / 雙色漸層） -->
-          <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-stone-200 shadow-md">
+          <!-- 模組 C：融合式獨立三區主題配色（頁面背景 / Header Bar / 按鈕） -->
+          <div class="lg:col-span-5 bg-white/95 backdrop-blur-sm rounded-2xl p-6 border border-stone-200 shadow-md">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-200">
               <div>
                 <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
                   <i class="fa-solid fa-palette text-amber-600"></i>
-                  <span>頁面主題配色（單色 / 雙色漸層）</span>
+                  <span>典禮主題與三區獨立配色</span>
                 </h3>
-                <p class="text-xs text-slate-500 mt-0.5">可即時改變典禮主視覺底色，並同步至大螢幕與來賓端</p>
+                <p class="text-xs text-slate-500 mt-0.5">可分別調整頁面底色、頂部導覽列與按鈕配色，並同步至所有來賓手機</p>
               </div>
+              <button type="button" onclick="resetThemeToDefault()"
+                class="text-xs px-2.5 py-1 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold shrink-0">
+                重設預設
+              </button>
             </div>
 
             <!-- 推薦主題色票一鍵套用 -->
             <div class="mb-4">
-              <label class="block text-xs font-bold text-slate-700 mb-2">快速典禮色票預設：</label>
+              <label class="block text-xs font-bold text-slate-700 mb-2">典禮全套色票預設（一鍵協調三區色彩）：</label>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <button onclick="applyThemePreset('gradient', '#0B2B26', '#164A41', '#D4AF37', '135deg')"
-                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                <button type="button" onclick="applyFullPreset('emerald_gold')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition bg-white">
                   <span class="w-5 h-5 rounded-full shrink-0" style="background: linear-gradient(135deg, #0B2B26, #164A41);"></span>
                   <span class="text-xs font-bold text-slate-800 truncate">經典翠綠金</span>
                 </button>
-                <button onclick="applyThemePreset('gradient', '#111827', '#374151', '#F59E0B', '135deg')"
-                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                <button type="button" onclick="applyFullPreset('noir_gold')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition bg-white">
                   <span class="w-5 h-5 rounded-full shrink-0" style="background: linear-gradient(135deg, #111827, #374151);"></span>
                   <span class="text-xs font-bold text-slate-800 truncate">黑金奢華夜</span>
                 </button>
-                <button onclick="applyThemePreset('gradient', '#4C0519', '#881337', '#FBBF24', '135deg')"
-                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                <button type="button" onclick="applyFullPreset('berry_wine')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition bg-white">
                   <span class="w-5 h-5 rounded-full shrink-0" style="background: linear-gradient(135deg, #4C0519, #881337);"></span>
                   <span class="text-xs font-bold text-slate-800 truncate">莓果紅酒紅</span>
                 </button>
-                <button onclick="applyThemePreset('gradient', '#0F172A', '#1E3A8A', '#38BDF8', '135deg')"
-                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                <button type="button" onclick="applyFullPreset('royal_blue')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition bg-white">
                   <span class="w-5 h-5 rounded-full shrink-0" style="background: linear-gradient(135deg, #0F172A, #1E3A8A);"></span>
                   <span class="text-xs font-bold text-slate-800 truncate">皇家星夜藍</span>
                 </button>
-                <button onclick="applyThemePreset('gradient', '#7C2D12', '#C2410C', '#FDE047', '135deg')"
-                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                <button type="button" onclick="applyFullPreset('sunset_tea')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition bg-white">
                   <span class="w-5 h-5 rounded-full shrink-0" style="background: linear-gradient(135deg, #7C2D12, #C2410C);"></span>
                   <span class="text-xs font-bold text-slate-800 truncate">暖橘果茶夕陽</span>
                 </button>
-                <button onclick="applyThemePreset('solid', '#1E293B', '#1E293B', '#EAB308', '135deg')"
-                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition">
+                <button type="button" onclick="applyFullPreset('cream_slate')"
+                  class="p-2 rounded-xl border border-slate-200 hover:border-amber-500 text-left flex items-center gap-2 transition bg-white">
                   <span class="w-5 h-5 rounded-full shrink-0" style="background: #1E293B;"></span>
-                  <span class="text-xs font-bold text-slate-800 truncate">純粹石墨單色</span>
+                  <span class="text-xs font-bold text-slate-800 truncate">極簡石墨單色</span>
                 </button>
               </div>
             </div>
 
-            <!-- 單色 / 雙色漸層模式切換 -->
-            <div class="space-y-3 bg-stone-50 p-4 rounded-xl border border-stone-200">
+            <!-- 三區切換分頁籤 -->
+            <div class="grid grid-cols-3 gap-1 bg-slate-200/80 p-1 rounded-xl mb-3">
+              <button type="button" id="color-tab-page" onclick="switchColorTargetTab('page')"
+                class="py-1.5 px-2 rounded-lg text-xs font-bold transition bg-white text-slate-900 shadow-sm">
+                <i class="fa-solid fa-layer-group mr-1 text-amber-600"></i>頁面背景
+              </button>
+              <button type="button" id="color-tab-header" onclick="switchColorTargetTab('header')"
+                class="py-1.5 px-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900">
+                <i class="fa-solid fa-window-maximize mr-1 text-amber-600"></i>Header Bar
+              </button>
+              <button type="button" id="color-tab-btn" onclick="switchColorTargetTab('btn')"
+                class="py-1.5 px-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900">
+                <i class="fa-solid fa-hand-pointer mr-1 text-amber-600"></i>主要按鈕
+              </button>
+            </div>
+
+            <!-- 分頁 1：頁面背景 (Page Background) -->
+            <div id="color-panel-page" class="space-y-3 bg-stone-50 p-4 rounded-xl border border-stone-200">
               <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-slate-700">色彩填充模式：</label>
+                <label class="text-xs font-bold text-slate-700">頁面底色填充模式：</label>
                 <div class="inline-flex rounded-lg bg-slate-200 p-0.5">
-                  <button type="button" id="theme-mode-solid" onclick="setThemeMode('solid')"
-                    class="px-3 py-1 rounded-md text-xs font-bold transition">
-                    單色模式
-                  </button>
-                  <button type="button" id="theme-mode-gradient" onclick="setThemeMode('gradient')"
-                    class="px-3 py-1 rounded-md text-xs font-bold transition">
-                    雙色漸層
-                  </button>
+                  <button type="button" id="page-mode-solid" onclick="setAreaThemeMode('page', 'solid')"
+                    class="px-3 py-1 rounded-md text-xs font-bold transition">單色</button>
+                  <button type="button" id="page-mode-gradient" onclick="setAreaThemeMode('page', 'gradient')"
+                    class="px-3 py-1 rounded-md text-xs font-bold transition">雙色漸層</button>
                 </div>
               </div>
-
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+              <div class="grid grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label class="block text-[11px] font-semibold text-slate-600 mb-1" id="theme-c1-label">主背景色 1</label>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">背景主色 1</label>
                   <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-lg border border-slate-300">
-                    <input type="color" id="theme-color-1" value="#0B2B26" onchange="updateThemeFromInputs()"
+                    <input type="color" id="page-color-1" value="#FAF7F0" onchange="updateThreeZoneThemeFromInputs()"
                       class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
-                    <span id="theme-color-1-hex" class="text-[11px] font-mono text-slate-600">#0B2B26</span>
+                    <span id="page-color-1-hex" class="text-[11px] font-mono text-slate-600">#FAF7F0</span>
                   </div>
                 </div>
-
-                <div id="theme-c2-wrapper">
-                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">漸層背景色 2</label>
+                <div id="page-c2-wrapper">
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">背景漸層色 2</label>
                   <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-lg border border-slate-300">
-                    <input type="color" id="theme-color-2" value="#164A41" onchange="updateThemeFromInputs()"
+                    <input type="color" id="page-color-2" value="#EFE9DB" onchange="updateThreeZoneThemeFromInputs()"
                       class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
-                    <span id="theme-color-2-hex" class="text-[11px] font-mono text-slate-600">#164A41</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">文字/徽章點綴色</label>
-                  <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-lg border border-slate-300">
-                    <input type="color" id="theme-accent-color" value="#D4AF37" onchange="updateThemeFromInputs()"
-                      class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
-                    <span id="theme-accent-hex" class="text-[11px] font-mono text-slate-600">#D4AF37</span>
+                    <span id="page-color-2-hex" class="text-[11px] font-mono text-slate-600">#EFE9DB</span>
                   </div>
                 </div>
               </div>
-
-              <div id="theme-angle-wrapper" class="pt-1">
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">雙色漸層方向：</label>
-                <select id="theme-gradient-angle" onchange="updateThemeFromInputs()"
+              <div id="page-angle-wrapper">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">頁面漸層方向：</label>
+                <select id="page-angle" onchange="updateThreeZoneThemeFromInputs()"
                   class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-800">
                   <option value="135deg">左上 → 右下對角線漸層 (135°)</option>
                   <option value="180deg">由上 → 下垂直漸層 (180°)</option>
                   <option value="90deg">由左 → 右水平漸層 (90°)</option>
-                  <option value="45deg">左下 → 右上對角線漸層 (45°)</option>
                 </select>
+              </div>
+            </div>
+
+            <!-- 分頁 2：頂部導覽列 (Header Bar) -->
+            <div id="color-panel-header" class="hidden space-y-3 bg-stone-50 p-4 rounded-xl border border-stone-200">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-slate-700">Header Bar 背景模式：</label>
+                <div class="inline-flex rounded-lg bg-slate-200 p-0.5">
+                  <button type="button" id="header-mode-solid" onclick="setAreaThemeMode('header', 'solid')"
+                    class="px-3 py-1 rounded-md text-xs font-bold transition">單色</button>
+                  <button type="button" id="header-mode-gradient" onclick="setAreaThemeMode('header', 'gradient')"
+                    class="px-3 py-1 rounded-md text-xs font-bold transition">雙色漸層</button>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-2.5 pt-1">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">導覽底色 1</label>
+                  <div class="flex items-center gap-1 bg-white p-1.5 rounded-lg border border-slate-300">
+                    <input type="color" id="header-color-1" value="#0B2B26" onchange="updateThreeZoneThemeFromInputs()"
+                      class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                    <span id="header-color-1-hex" class="text-[10px] font-mono text-slate-600">#0B2B26</span>
+                  </div>
+                </div>
+                <div id="header-c2-wrapper">
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">導覽底色 2</label>
+                  <div class="flex items-center gap-1 bg-white p-1.5 rounded-lg border border-slate-300">
+                    <input type="color" id="header-color-2" value="#164A41" onchange="updateThreeZoneThemeFromInputs()"
+                      class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                    <span id="header-color-2-hex" class="text-[10px] font-mono text-slate-600">#164A41</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">導覽文字色</label>
+                  <div class="flex items-center gap-1 bg-white p-1.5 rounded-lg border border-slate-300">
+                    <input type="color" id="header-text-color" value="#FAF7F0" onchange="updateThreeZoneThemeFromInputs()"
+                      class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                    <span id="header-text-hex" class="text-[10px] font-mono text-slate-600">#FAF7F0</span>
+                  </div>
+                </div>
+              </div>
+              <div id="header-angle-wrapper">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Header 漸層方向：</label>
+                <select id="header-angle" onchange="updateThreeZoneThemeFromInputs()"
+                  class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-800">
+                  <option value="135deg">左上 → 右下對角線漸層 (135°)</option>
+                  <option value="90deg">由左 → 右水平漸層 (90°)</option>
+                  <option value="180deg">由上 → 下垂直漸層 (180°)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 分頁 3：主要按鈕 (Buttons) -->
+            <div id="color-panel-btn" class="hidden space-y-3 bg-stone-50 p-4 rounded-xl border border-stone-200">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-slate-700">主要按鈕背景模式：</label>
+                <div class="inline-flex rounded-lg bg-slate-200 p-0.5">
+                  <button type="button" id="btn-mode-solid" onclick="setAreaThemeMode('btn', 'solid')"
+                    class="px-3 py-1 rounded-md text-xs font-bold transition">單色</button>
+                  <button type="button" id="btn-mode-gradient" onclick="setAreaThemeMode('btn', 'gradient')"
+                    class="px-3 py-1 rounded-md text-xs font-bold transition">雙色漸層</button>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-2.5 pt-1">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">按鈕底色 1</label>
+                  <div class="flex items-center gap-1 bg-white p-1.5 rounded-lg border border-slate-300">
+                    <input type="color" id="btn-color-1" value="#0B2B26" onchange="updateThreeZoneThemeFromInputs()"
+                      class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                    <span id="btn-color-1-hex" class="text-[10px] font-mono text-slate-600">#0B2B26</span>
+                  </div>
+                </div>
+                <div id="btn-c2-wrapper">
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">按鈕底色 2</label>
+                  <div class="flex items-center gap-1 bg-white p-1.5 rounded-lg border border-slate-300">
+                    <input type="color" id="btn-color-2" value="#164A41" onchange="updateThreeZoneThemeFromInputs()"
+                      class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                    <span id="btn-color-2-hex" class="text-[10px] font-mono text-slate-600">#164A41</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">按鈕文字色</label>
+                  <div class="flex items-center gap-1 bg-white p-1.5 rounded-lg border border-slate-300">
+                    <input type="color" id="btn-text-color" value="#F3D060" onchange="updateThreeZoneThemeFromInputs()"
+                      class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                    <span id="btn-text-hex" class="text-[10px] font-mono text-slate-600">#F3D060</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pt-1 flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200">
+                <span class="text-[11px] text-slate-500">按鈕即時預覽：</span>
+                <span class="px-3.5 py-1.5 rounded-lg ceremony-primary-btn text-xs font-bold shadow-sm">
+                  <i class="fa-solid fa-paper-plane mr-1"></i>送出預測榜單
+                </span>
               </div>
             </div>
           </div>
 
           <!-- 模組 D：入圍飲品品項編輯與增減管理 -->
-          <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-stone-200 shadow-md">
+          <div class="lg:col-span-7 bg-white/95 backdrop-blur-sm rounded-2xl p-6 border border-stone-200 shadow-md">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200">
               <div>
                 <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
@@ -814,7 +897,7 @@ button.btn-primary-theme:hover,
                   <span>新增飲品</span>
                 </button>
                 <button onclick="saveDrinksList()"
-                  class="px-4 py-1.5 rounded-lg ceremony-theme-bg ceremony-accent-text text-xs font-bold hover:opacity-95 transition shadow-sm">
+                  class="px-4 py-1.5 rounded-lg ceremony-primary-btn text-xs font-bold transition shadow-sm">
                   儲存飲品變更
                 </button>
               </div>
@@ -828,7 +911,7 @@ button.btn-primary-theme:hover,
         </div>
 
         <!-- 主控網格第三排：參賽來賓即時名單 -->
-        <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-md">
+        <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 border border-stone-200 shadow-md">
           <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-200">
             <h3 class="font-serif-title font-bold text-lg text-slate-900 flex items-center gap-2">
               <i class="fa-solid fa-users text-amber-600"></i>
@@ -846,11 +929,23 @@ button.btn-primary-theme:hover,
 
   </main>
 
-  <!-- 應用程式核心邏輯 -->
+  <!-- 應用程式核心邏輯 (已整合您的 Firebase Realtime Database) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getDatabase, ref, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+    // =========================================================================
+    // 0. 您的專屬 Firebase 專案設定
+    // =========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyB4tVbyehTeBXrbupmCYzQofd4cHlPiEp4",
+      authDomain: "awards-e1b1a.firebaseapp.com",
+      databaseURL: "https://awards-e1b1a-default-rtdb.firebaseio.com",
+      projectId: "awards-e1b1a",
+      storageBucket: "awards-e1b1a.firebasestorage.app",
+      messagingSenderId: "853157002850",
+      appId: "1:853157002850:web:51b41eac522a14ed4b5b3b"
+    };
 
     // =========================================================================
     // 1. 預設資料與狀態架構
@@ -864,6 +959,30 @@ button.btn-primary-theme:hover,
       { id: 'd6', name: '大甲芋頭鮮奶露', tag: '手作系人氣', desc: '每日現蒸綿密大甲芋泥融入香醇鮮奶', icon: '🍠' },
       { id: 'd7', name: '翡翠檸檬綠茶', tag: '清爽系冠軍', desc: '屏東九如新鮮榨檸檬搭配茉莉綠茶', icon: '🍋' }
     ];
+
+    const DEFAULT_THEME = {
+      // 典禮橫幅與大螢幕主色
+      color1: '#0B2B26',
+      color2: '#164A41',
+      accent: '#D4AF37',
+      // 1. 頁面背景
+      pageMode: 'solid',
+      pageColor1: '#FAF7F0',
+      pageColor2: '#EFE9DB',
+      pageAngle: '135deg',
+      // 2. 頂部導覽列 Header Bar
+      headerMode: 'gradient',
+      headerColor1: '#0B2B26',
+      headerColor2: '#164A41',
+      headerText: '#FAF7F0',
+      headerAngle: '135deg',
+      // 3. 主要按鈕 Buttons
+      btnMode: 'gradient',
+      btnColor1: '#0B2B26',
+      btnColor2: '#164A41',
+      btnText: '#F3D060',
+      btnAngle: '135deg'
+    };
 
     const INITIAL_STATE = {
       eventTitle: '金萃大賞｜年度飲品頒獎典禮',
@@ -882,108 +1001,90 @@ button.btn-primary-theme:hover,
         mode: 'auto_top',
         manualPlayerIds: []
       },
-      theme: {
-        mode: 'gradient', // 'solid' | 'gradient'
-        color1: '#0B2B26',
-        color2: '#164A41',
-        accent: '#D4AF37',
-        angle: '135deg'
-      },
+      theme: JSON.parse(JSON.stringify(DEFAULT_THEME)),
       players: {}
     };
 
     let appState = JSON.parse(JSON.stringify(INITIAL_STATE));
     let currentView = 'guest';
     let isAdminAuthenticated = false;
+    let activeColorTab = 'page';
 
-    // 來賓本機操作狀態
-    let guestPlayerId = sessionStorage.getItem('beverage_award_uid') || ('guest_' + Math.random().toString(36).substring(2, 10));
-    sessionStorage.setItem('beverage_award_uid', guestPlayerId);
+    // 來賓本機唯一識別碼（存在 localStorage 避免同台手機重整變新玩家）
+    let guestPlayerId = localStorage.getItem('beverage_award_uid_v3') || ('guest_' + Math.random().toString(36).substring(2, 11));
+    localStorage.setItem('beverage_award_uid_v3', guestPlayerId);
     let localGuestSlots = [];
     let selectedDrinkIdForTap = null;
     let hasLoadedInitialGuestSlots = false;
 
-    // 同步引擎變數
-    let db = null;
-    let auth = null;
-    let stateDocRef = null;
-    let useCloudSync = false;
-    const LOCAL_STORAGE_KEY = 'golden_brew_awards_state_v2';
-    const broadcastChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('golden_brew_awards_channel_v2') : null;
+    // Firebase Realtime Database 連線變數
+    let rtdb = null;
+    let ceremonyRootRef = null;
+    let isCloudConnected = false;
 
     // =========================================================================
-    // 2. 初始化同步引擎
+    // 2. 初始化 Firebase Realtime Database 即時同步
     // =========================================================================
-    async function initSyncEngine() {
+    function initFirebaseSync() {
       try {
-        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-          const firebaseConfig = JSON.parse(__firebase_config);
-          const appId = typeof __app_id !== 'undefined' ? __app_id : 'golden-brew-awards';
-          const app = initializeApp(firebaseConfig);
-          auth = getAuth(app);
-          db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        rtdb = getDatabase(app);
+        ceremonyRootRef = ref(rtdb, 'golden_brew_awards/live_session');
 
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
+        // 監聽連線狀態
+        const connectedRef = ref(rtdb, '.info/connected');
+        onValue(connectedRef, (snap) => {
+          if (snap.val() === true) {
+            isCloudConnected = true;
+            updateSyncBadge('Firebase 雲端即時同步中', true);
           } else {
-            await signInAnonymously(auth);
+            isCloudConnected = false;
+            updateSyncBadge('雲端重新連線中...', false);
           }
+        });
 
-          stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'ceremony_state', 'live_session_v2');
-          useCloudSync = true;
-          updateSyncBadge('雲端多人即時連線');
-
-          onSnapshot(stateDocRef, (snapshot) => {
-            if (snapshot.exists()) {
-              mergeAndApplyState(snapshot.data());
-            } else {
-              persistState(appState);
+        // 監聽整場典禮資料變化
+        onValue(ceremonyRootRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const rawData = snapshot.val();
+            // Firebase 陣列有時會轉成物件，這裡安全轉回陣列
+            if (rawData.drinks && !Array.isArray(rawData.drinks)) {
+              rawData.drinks = Object.values(rawData.drinks);
             }
-          }, () => fallbackToLocalSync());
-          return;
-        }
-      } catch (e) {
-        console.warn('啟用本機跨分頁同步模式:', e);
-      }
-      fallbackToLocalSync();
-    }
-
-    function fallbackToLocalSync() {
-      useCloudSync = false;
-      updateSyncBadge('本機/多視窗即時同步');
-
-      try {
-        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (saved) {
-          mergeAndApplyState(JSON.parse(saved));
-        } else {
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
-        }
-      } catch (e) {
-        console.error(e);
-      }
-
-      window.addEventListener('storage', (event) => {
-        if (event.key === LOCAL_STORAGE_KEY && event.newValue) {
-          mergeAndApplyState(JSON.parse(event.newValue));
-        }
-      });
-
-      if (broadcastChannel) {
-        broadcastChannel.onmessage = (event) => {
-          if (event.data && event.data.type === 'STATE_UPDATE') {
-            mergeAndApplyState(event.data.payload);
+            if (rawData.officialRanks && !Array.isArray(rawData.officialRanks)) {
+              rawData.officialRanks = Object.values(rawData.officialRanks);
+            }
+            if (rawData.revealedRanks && !Array.isArray(rawData.revealedRanks)) {
+              rawData.revealedRanks = Object.values(rawData.revealedRanks);
+            }
+            mergeAndApplyState(rawData);
+          } else {
+            // 若資料庫首次使用尚無資料，寫入初始狀態
+            set(ceremonyRootRef, appState);
           }
-        };
+        }, (error) => {
+          console.error('Firebase 讀取錯誤:', error);
+          updateSyncBadge('資料庫權限需檢查', false);
+          showToast('雲端資料庫連線異常，請確認 Realtime Database 規則已開啟', 'error');
+        });
+      } catch (err) {
+        console.error('Firebase 初始化失敗:', err);
+        updateSyncBadge('離線模式', false);
       }
     }
 
-    function updateSyncBadge(text) {
+    function updateSyncBadge(text, online) {
       const badge = document.getElementById('sync-badge');
       const label = document.getElementById('sync-status-text');
+      const dot = document.getElementById('sync-dot');
       if (badge && label) {
         badge.classList.remove('hidden');
         label.textContent = text;
+        if (dot) {
+          dot.className = online
+            ? 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping'
+            : 'w-1.5 h-1.5 rounded-full bg-amber-400';
+        }
       }
     }
 
@@ -1007,13 +1108,18 @@ button.btn-primary-theme:hover,
       appState = {
         ...JSON.parse(JSON.stringify(INITIAL_STATE)),
         ...incoming,
+        drinks: Array.isArray(incoming.drinks) && incoming.drinks.length > 0 ? incoming.drinks : JSON.parse(JSON.stringify(DEFAULT_DRINKS)),
+        revealedRanks: Array.isArray(incoming.revealedRanks) ? incoming.revealedRanks : [],
         scoring: { ...INITIAL_STATE.scoring, ...(incoming.scoring || {}) },
-        bonus: { ...INITIAL_STATE.bonus, ...(incoming.bonus || {}) },
-        theme: { ...INITIAL_STATE.theme, ...(incoming.theme || {}) },
+        bonus: {
+          ...INITIAL_STATE.bonus,
+          ...(incoming.bonus || {}),
+          manualPlayerIds: Array.isArray(incoming.bonus?.manualPlayerIds) ? incoming.bonus.manualPlayerIds : []
+        },
+        theme: { ...DEFAULT_THEME, ...(incoming.theme || {}) },
         players: incoming.players || {}
       };
 
-      // 確保 officialRanks 長度與 drinks 一致
       const validDrinkIds = appState.drinks.map(d => d.id);
       if (!Array.isArray(appState.officialRanks) || appState.officialRanks.length !== validDrinkIds.length) {
         appState.officialRanks = [...validDrinkIds];
@@ -1046,45 +1152,71 @@ button.btn-primary-theme:hover,
       renderAllViews();
     }
 
-    async function persistState(newState) {
+    // 寫入設定（不覆蓋正在同時投票的 players 節點，避免併發衝突）
+    async function persistConfigState(newState) {
       appState = newState;
       applyThemeStyles(appState.theme);
       renderAllViews();
 
-      if (useCloudSync && stateDocRef) {
+      if (rtdb && ceremonyRootRef) {
         try {
-          await setDoc(stateDocRef, appState);
+          await update(ceremonyRootRef, {
+            eventTitle: newState.eventTitle,
+            isLocked: newState.isLocked,
+            drinks: newState.drinks,
+            officialRanks: newState.officialRanks,
+            revealedRanks: newState.revealedRanks,
+            scoring: newState.scoring,
+            bonus: newState.bonus,
+            theme: newState.theme
+          });
         } catch (err) {
-          console.error('雲端寫入失敗:', err);
-        }
-      } else {
-        try {
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
-          if (broadcastChannel) {
-            broadcastChannel.postMessage({ type: 'STATE_UPDATE', payload: appState });
-          }
-        } catch (err) {
-          console.error('本機儲存失敗:', err);
+          console.error('雲端設定寫入失敗:', err);
+          showToast('同步至雲端時發生錯誤，請檢查網路', 'error');
         }
       }
     }
 
     // =========================================================================
-    // 3. 主題顏色引擎（單色 / 雙色漸層）
+    // 3. 獨立三區主題顏色引擎（頁面背景 / Header Bar / 主要按鈕）
     // =========================================================================
     function applyThemeStyles(theme) {
-      const t = { ...INITIAL_STATE.theme, ...(theme || {}) };
+      const t = { ...DEFAULT_THEME, ...(theme || {}) };
       const root = document.documentElement;
-      root.style.setProperty('--theme-bg-1', t.color1);
-      root.style.setProperty('--theme-bg-2', t.color2);
-      root.style.setProperty('--theme-accent', t.accent);
-      root.style.setProperty('--theme-accent-bright', lightenHex(t.accent, 22));
 
-      if (t.mode === 'solid') {
-        root.style.setProperty('--theme-bg-style', t.color1);
-      } else {
-        root.style.setProperty('--theme-bg-style', `linear-gradient(${t.angle || '135deg'}, ${t.color1} 0%, ${t.color2} 100%)`);
-      }
+      // 典禮主視覺區塊（橫幅與大螢幕）跟隨 Header 色系保持一致美感
+      const bannerC1 = t.headerColor1 || t.color1;
+      const bannerC2 = t.headerColor2 || t.color2;
+      root.style.setProperty('--theme-bg-1', bannerC1);
+      root.style.setProperty('--theme-bg-2', bannerC2);
+      root.style.setProperty('--theme-accent', t.accent || '#D4AF37');
+      root.style.setProperty('--theme-accent-bright', lightenHex(t.accent || '#D4AF37', 22));
+      root.style.setProperty(
+        '--theme-bg-style',
+        t.headerMode === 'solid'
+          ? bannerC1
+          : `linear-gradient(${t.headerAngle || '135deg'}, ${bannerC1} 0%, ${bannerC2} 100%)`
+      );
+
+      // 1. 頁面背景
+      const pageBg = t.pageMode === 'gradient'
+        ? `linear-gradient(${t.pageAngle || '135deg'}, ${t.pageColor1} 0%, ${t.pageColor2} 100%)`
+        : t.pageColor1;
+      root.style.setProperty('--page-bg-style', pageBg);
+
+      // 2. Header Bar
+      const headerBg = t.headerMode === 'gradient'
+        ? `linear-gradient(${t.headerAngle || '135deg'}, ${t.headerColor1} 0%, ${t.headerColor2} 100%)`
+        : t.headerColor1;
+      root.style.setProperty('--header-bg-style', headerBg);
+      root.style.setProperty('--header-text-color', t.headerText || '#FAF7F0');
+
+      // 3. 主要按鈕
+      const btnBg = t.btnMode === 'gradient'
+        ? `linear-gradient(${t.btnAngle || '135deg'}, ${t.btnColor1} 0%, ${t.btnColor2} 100%)`
+        : t.btnColor1;
+      root.style.setProperty('--btn-bg-style', btnBg);
+      root.style.setProperty('--btn-text-color', t.btnText || '#F3D060');
     }
 
     function lightenHex(hex, percent) {
@@ -1112,13 +1244,14 @@ button.btn-primary-theme:hover,
       const computed = playersList.map(player => {
         let baseScore = 0;
         let exactHits = 0;
+        const preds = Array.isArray(player.predictions) ? player.predictions : [];
 
         for (let rank = 1; rank <= totalRanks; rank++) {
           if (!revealedSet.has(rank)) continue;
           const officialDrinkId = appState.officialRanks[rank - 1];
           if (!officialDrinkId) continue;
 
-          const predictedIndex = (player.predictions || []).indexOf(officialDrinkId);
+          const predictedIndex = preds.indexOf(officialDrinkId);
           if (predictedIndex !== -1) {
             const predictedRank = predictedIndex + 1;
             const diff = Math.abs(predictedRank - rank);
@@ -1135,6 +1268,7 @@ button.btn-primary-theme:hover,
 
         return {
           ...player,
+          predictions: preds,
           baseScore,
           exactHits,
           bonusAwarded: 0,
@@ -1180,11 +1314,11 @@ button.btn-primary-theme:hover,
         if (v === viewName) {
           el.classList.remove('hidden');
           tab.classList.add('gold-gradient-bg', 'text-slate-950', 'shadow');
-          tab.classList.remove('text-white/80', 'hover:text-white');
+          tab.classList.remove('opacity-80', 'hover:opacity-100');
         } else {
           el.classList.add('hidden');
           tab.classList.remove('gold-gradient-bg', 'text-slate-950', 'shadow');
-          tab.classList.add('text-white/80', 'hover:text-white');
+          tab.classList.add('opacity-80', 'hover:opacity-100');
         }
       });
       renderAllViews();
@@ -1518,16 +1652,23 @@ button.btn-primary-theme:hover,
         return;
       }
 
-      const nextState = JSON.parse(JSON.stringify(appState));
-      nextState.players[guestPlayerId] = {
+      const playerPayload = {
         id: guestPlayerId,
         name: nickname,
         predictions: [...localGuestSlots],
         updatedAt: Date.now()
       };
 
-      await persistState(nextState);
-      showToast(`太棒了，${nickname}！您的預測榜單已成功送出！`, 'success');
+      // 直接寫入獨立的 players/{guestPlayerId} 路徑，確保多人同時投票零衝突
+      if (rtdb) {
+        try {
+          await set(ref(rtdb, `golden_brew_awards/live_session/players/${guestPlayerId}`), playerPayload);
+          showToast(`太棒了，${nickname}！您的預測榜單已即時同步至大螢幕！`, 'success');
+        } catch (err) {
+          console.error('送出預測失敗:', err);
+          showToast('送出失敗，請檢查網路連線後再試一次', 'error');
+        }
+      }
     };
 
     // =========================================================================
@@ -1795,7 +1936,7 @@ button.btn-primary-theme:hover,
             class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
               isRevealed
                 ? 'gold-gradient-bg text-slate-950'
-                : 'ceremony-theme-bg ceremony-accent-text hover:opacity-90'
+                : 'ceremony-primary-btn'
             }">
             ${isRevealed ? '<i class="fa-solid fa-eye mr-1"></i>已公布（收回）' : '<i class="fa-solid fa-eye-slash mr-1"></i>點擊公布'}
           </button>
@@ -1859,32 +2000,8 @@ button.btn-primary-theme:hover,
       document.getElementById('score-diff1').value = appState.scoring.diff1;
       document.getElementById('score-diff2').value = appState.scoring.diff2;
 
-      // 主題顏色控制項同步
-      const t = appState.theme;
-      const solidBtn = document.getElementById('theme-mode-solid');
-      const gradBtn = document.getElementById('theme-mode-gradient');
-      const c2Wrap = document.getElementById('theme-c2-wrapper');
-      const angleWrap = document.getElementById('theme-angle-wrapper');
-
-      if (t.mode === 'solid') {
-        solidBtn.className = 'px-3 py-1 rounded-md text-xs font-bold bg-white text-slate-900 shadow';
-        gradBtn.className = 'px-3 py-1 rounded-md text-xs font-bold text-slate-600';
-        c2Wrap.classList.add('opacity-40', 'pointer-events-none');
-        angleWrap.classList.add('opacity-40', 'pointer-events-none');
-      } else {
-        gradBtn.className = 'px-3 py-1 rounded-md text-xs font-bold bg-white text-slate-900 shadow';
-        solidBtn.className = 'px-3 py-1 rounded-md text-xs font-bold text-slate-600';
-        c2Wrap.classList.remove('opacity-40', 'pointer-events-none');
-        angleWrap.classList.remove('opacity-40', 'pointer-events-none');
-      }
-
-      document.getElementById('theme-color-1').value = t.color1;
-      document.getElementById('theme-color-1-hex').textContent = t.color1.toUpperCase();
-      document.getElementById('theme-color-2').value = t.color2;
-      document.getElementById('theme-color-2-hex').textContent = t.color2.toUpperCase();
-      document.getElementById('theme-accent-color').value = t.accent;
-      document.getElementById('theme-accent-hex').textContent = t.accent.toUpperCase();
-      document.getElementById('theme-gradient-angle').value = t.angle || '135deg';
+      // 同步三區獨立主題配色控制項
+      syncThreeZoneThemeInputs(appState.theme);
 
       // 飲品編輯器（支援增減）
       document.getElementById('admin-drinks-count').textContent = totalDrinks;
@@ -1941,12 +2058,171 @@ button.btn-primary-theme:hover,
       }
     }
 
+    function syncThreeZoneThemeInputs(t) {
+      // 1. Page
+      const pSolid = document.getElementById('page-mode-solid');
+      const pGrad = document.getElementById('page-mode-gradient');
+      const pC2 = document.getElementById('page-c2-wrapper');
+      const pAng = document.getElementById('page-angle-wrapper');
+      if (t.pageMode === 'solid') {
+        pSolid.className = 'px-3 py-1 rounded-md text-xs font-bold bg-white text-slate-900 shadow';
+        pGrad.className = 'px-3 py-1 rounded-md text-xs font-bold text-slate-600';
+        pC2.classList.add('opacity-40', 'pointer-events-none');
+        pAng.classList.add('opacity-40', 'pointer-events-none');
+      } else {
+        pGrad.className = 'px-3 py-1 rounded-md text-xs font-bold bg-white text-slate-900 shadow';
+        pSolid.className = 'px-3 py-1 rounded-md text-xs font-bold text-slate-600';
+        pC2.classList.remove('opacity-40', 'pointer-events-none');
+        pAng.classList.remove('opacity-40', 'pointer-events-none');
+      }
+      document.getElementById('page-color-1').value = t.pageColor1;
+      document.getElementById('page-color-1-hex').textContent = t.pageColor1.toUpperCase();
+      document.getElementById('page-color-2').value = t.pageColor2;
+      document.getElementById('page-color-2-hex').textContent = t.pageColor2.toUpperCase();
+      document.getElementById('page-angle').value = t.pageAngle || '135deg';
+
+      // 2. Header
+      const hSolid = document.getElementById('header-mode-solid');
+      const hGrad = document.getElementById('header-mode-gradient');
+      const hC2 = document.getElementById('header-c2-wrapper');
+      const hAng = document.getElementById('header-angle-wrapper');
+      if (t.headerMode === 'solid') {
+        hSolid.className = 'px-3 py-1 rounded-md text-xs font-bold bg-white text-slate-900 shadow';
+        hGrad.className = 'px-3 py-1 rounded-md text-xs font-bold text-slate-600';
+        hC2.classList.add('opacity-40', 'pointer-events-none');
+        hAng.classList.add('opacity-40', 'pointer-events-none');
+      } else {
+        hGrad.className = 'px-3 py-1 rounded-md text-xs font-bold bg-white text-slate-900 shadow';
+        hSolid.className = 'px-3 py-1 rounded-md text-xs font-bold text-slate-600';
+        hC2.classList.remove('opacity-40', 'pointer-events-none');
+        hAng.classList.remove('opacity-40', 'pointer-events-none');
+      }
+      document.getElementById('header-color-1').value = t.headerColor1;
+      document.getElementById('header-color-1-hex').textContent = t.headerColor1.toUpperCase();
+      document.getElementById('header-color-2').value = t.headerColor2;
+      document.getElementById('header-color-2-hex').textContent = t.headerColor2.toUpperCase();
+      document.getElementById('header-text-color').value = t.headerText;
+      document.getElementById('header-text-hex').textContent = t.headerText.toUpperCase();
+      document.getElementById('header-angle').value = t.headerAngle || '135deg';
+
+      // 3. Button
+      const bSolid = document.getElementById('btn-mode-solid');
+      const bGrad = document.getElementById('btn-mode-gradient');
+      const bC2 = document.getElementById('btn-c2-wrapper');
+      if (t.btnMode === 'solid') {
+        bSolid.className = 'px-3 py-1 rounded-md text-xs font-bold bg-white text-slate-900 shadow';
+        bGrad.className = 'px-3 py-1 rounded-md text-xs font-bold text-slate-600';
+        bC2.classList.add('opacity-40', 'pointer-events-none');
+      } else {
+        bGrad.className = 'px-3 py-1 rounded-md text-xs font-bold bg-white text-slate-900 shadow';
+        bSolid.className = 'px-3 py-1 rounded-md text-xs font-bold text-slate-600';
+        bC2.classList.remove('opacity-40', 'pointer-events-none');
+      }
+      document.getElementById('btn-color-1').value = t.btnColor1;
+      document.getElementById('btn-color-1-hex').textContent = t.btnColor1.toUpperCase();
+      document.getElementById('btn-color-2').value = t.btnColor2;
+      document.getElementById('btn-color-2-hex').textContent = t.btnColor2.toUpperCase();
+      document.getElementById('btn-text-color').value = t.btnText;
+      document.getElementById('btn-text-hex').textContent = t.btnText.toUpperCase();
+    }
+
     // =========================================================================
-    // 9. 後台互動操作函式（含飲品增減、主題配色、QR Code 產生）
+    // 9. 後台互動操作函式（含飲品增減、三區配色、QR Code 產生）
     // =========================================================================
+    window.switchColorTargetTab = function(tabName) {
+      activeColorTab = tabName;
+      ['page', 'header', 'btn'].forEach(key => {
+        const tabBtn = document.getElementById(`color-tab-${key}`);
+        const panel = document.getElementById(`color-panel-${key}`);
+        if (key === tabName) {
+          tabBtn.className = 'py-1.5 px-2 rounded-lg text-xs font-bold transition bg-white text-slate-900 shadow-sm';
+          panel.classList.remove('hidden');
+        } else {
+          tabBtn.className = 'py-1.5 px-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
+          panel.classList.add('hidden');
+        }
+      });
+    };
+
+    window.setAreaThemeMode = async function(area, mode) {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      if (area === 'page') nextState.theme.pageMode = mode;
+      if (area === 'header') nextState.theme.headerMode = mode;
+      if (area === 'btn') nextState.theme.btnMode = mode;
+      await persistConfigState(nextState);
+    };
+
+    window.updateThreeZoneThemeFromInputs = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.theme.pageColor1 = document.getElementById('page-color-1').value;
+      nextState.theme.pageColor2 = document.getElementById('page-color-2').value;
+      nextState.theme.pageAngle = document.getElementById('page-angle').value;
+
+      nextState.theme.headerColor1 = document.getElementById('header-color-1').value;
+      nextState.theme.headerColor2 = document.getElementById('header-color-2').value;
+      nextState.theme.headerText = document.getElementById('header-text-color').value;
+      nextState.theme.headerAngle = document.getElementById('header-angle').value;
+
+      nextState.theme.btnColor1 = document.getElementById('btn-color-1').value;
+      nextState.theme.btnColor2 = document.getElementById('btn-color-2').value;
+      nextState.theme.btnText = document.getElementById('btn-text-color').value;
+
+      await persistConfigState(nextState);
+    };
+
+    window.applyFullPreset = async function(presetKey) {
+      const presets = {
+        emerald_gold: {
+          ...DEFAULT_THEME
+        },
+        noir_gold: {
+          color1: '#111827', color2: '#374151', accent: '#F59E0B',
+          pageMode: 'solid', pageColor1: '#F3F4F6', pageColor2: '#E5E7EB', pageAngle: '135deg',
+          headerMode: 'gradient', headerColor1: '#111827', headerColor2: '#374151', headerText: '#F9FAFB', headerAngle: '135deg',
+          btnMode: 'gradient', btnColor1: '#111827', btnColor2: '#374151', btnText: '#FBBF24', btnAngle: '135deg'
+        },
+        berry_wine: {
+          color1: '#4C0519', color2: '#881337', accent: '#FBBF24',
+          pageMode: 'solid', pageColor1: '#FFF1F2', pageColor2: '#FFE4E6', pageAngle: '135deg',
+          headerMode: 'gradient', headerColor1: '#4C0519', headerColor2: '#881337', headerText: '#FFF1F2', headerAngle: '135deg',
+          btnMode: 'gradient', btnColor1: '#881337', btnColor2: '#BE123C', btnText: '#FDE68A', btnAngle: '135deg'
+        },
+        royal_blue: {
+          color1: '#0F172A', color2: '#1E3A8A', accent: '#38BDF8',
+          pageMode: 'solid', pageColor1: '#F0F9FF', pageColor2: '#E0F2FE', pageAngle: '135deg',
+          headerMode: 'gradient', headerColor1: '#0F172A', headerColor2: '#1E3A8A', headerText: '#F8FAFC', headerAngle: '135deg',
+          btnMode: 'gradient', btnColor1: '#0F172A', btnColor2: '#1D4ED8', btnText: '#7DD3FC', btnAngle: '135deg'
+        },
+        sunset_tea: {
+          color1: '#7C2D12', color2: '#C2410C', accent: '#FDE047',
+          pageMode: 'solid', pageColor1: '#FFF7ED', pageColor2: '#FFEDD5', pageAngle: '135deg',
+          headerMode: 'gradient', headerColor1: '#7C2D12', headerColor2: '#C2410C', headerText: '#FFF7ED', headerAngle: '135deg',
+          btnMode: 'gradient', btnColor1: '#9A3412', btnColor2: '#EA580C', btnText: '#FEF08A', btnAngle: '135deg'
+        },
+        cream_slate: {
+          color1: '#1E293B', color2: '#334155', accent: '#EAB308',
+          pageMode: 'solid', pageColor1: '#F8FAFC', pageColor2: '#F1F5F9', pageAngle: '135deg',
+          headerMode: 'solid', headerColor1: '#1E293B', headerColor2: '#1E293B', headerText: '#F8FAFC', headerAngle: '135deg',
+          btnMode: 'solid', btnColor1: '#1E293B', btnColor2: '#1E293B', btnText: '#FACC15', btnAngle: '135deg'
+        }
+      };
+
+      const chosen = presets[presetKey] || DEFAULT_THEME;
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.theme = { ...chosen };
+      await persistConfigState(nextState);
+      showToast('已套用典禮全套配色並同步至所有畫面！', 'success');
+    };
+
+    window.resetThemeToDefault = async function() {
+      const nextState = JSON.parse(JSON.stringify(appState));
+      nextState.theme = JSON.parse(JSON.stringify(DEFAULT_THEME));
+      await persistConfigState(nextState);
+      showToast('已重設為預設典禮配色', 'info');
+    };
+
     window.addNewDrinkItem = async function() {
       const nextState = JSON.parse(JSON.stringify(appState));
-      // 先保留當前輸入框尚未儲存的文字修改
       syncInputsIntoDrinksArray(nextState.drinks);
 
       const newId = 'd_' + Date.now().toString(36);
@@ -1962,7 +2238,7 @@ button.btn-primary-theme:hover,
       });
       nextState.officialRanks.push(newId);
 
-      await persistState(nextState);
+      await persistConfigState(nextState);
       showToast(`已新增飲品！目前共 ${nextState.drinks.length} 項`, 'success');
     };
 
@@ -1976,10 +2252,9 @@ button.btn-primary-theme:hover,
 
       nextState.drinks = nextState.drinks.filter(d => d.id !== drinkId);
       nextState.officialRanks = nextState.officialRanks.filter(id => id !== drinkId);
-      // 清除超出新長度的已揭曉名次
       nextState.revealedRanks = nextState.revealedRanks.filter(r => r <= nextState.drinks.length);
 
-      await persistState(nextState);
+      await persistConfigState(nextState);
       showToast(`已移除飲品，排名欄位自動調整為 ${nextState.drinks.length} 名`, 'info');
     };
 
@@ -1997,31 +2272,8 @@ button.btn-primary-theme:hover,
     window.saveDrinksList = async function() {
       const nextState = JSON.parse(JSON.stringify(appState));
       syncInputsIntoDrinksArray(nextState.drinks);
-      await persistState(nextState);
+      await persistConfigState(nextState);
       showToast('已儲存所有飲品名稱與圖示變更！', 'success');
-    };
-
-    // 主題配色操作
-    window.setThemeMode = async function(mode) {
-      const nextState = JSON.parse(JSON.stringify(appState));
-      nextState.theme.mode = mode;
-      await persistState(nextState);
-    };
-
-    window.updateThemeFromInputs = async function() {
-      const nextState = JSON.parse(JSON.stringify(appState));
-      nextState.theme.color1 = document.getElementById('theme-color-1').value;
-      nextState.theme.color2 = document.getElementById('theme-color-2').value;
-      nextState.theme.accent = document.getElementById('theme-accent-color').value;
-      nextState.theme.angle = document.getElementById('theme-gradient-angle').value;
-      await persistState(nextState);
-    };
-
-    window.applyThemePreset = async function(mode, color1, color2, accent, angle) {
-      const nextState = JSON.parse(JSON.stringify(appState));
-      nextState.theme = { mode, color1, color2, accent, angle };
-      await persistState(nextState);
-      showToast('已套用典禮主題配色！', 'success');
     };
 
     // QR Code 視窗與生成
@@ -2071,7 +2323,6 @@ button.btn-primary-theme:hover,
           background: '#FFFFFF'
         });
       } else {
-        // 離線或 CDN 未載入時的備援 API
         canvas.classList.add('hidden');
         fallbackImg.classList.remove('hidden');
         fallbackImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=210x210&data=${encodeURIComponent(targetUrl)}`;
@@ -2089,7 +2340,7 @@ button.btn-primary-theme:hover,
     window.togglePredictionLock = async function() {
       const nextState = JSON.parse(JSON.stringify(appState));
       nextState.isLocked = !nextState.isLocked;
-      await persistState(nextState);
+      await persistConfigState(nextState);
       showToast(nextState.isLocked ? '已鎖定預測！來賓端無法再修改' : '已重新開放來賓預測', 'info');
     };
 
@@ -2100,14 +2351,14 @@ button.btn-primary-theme:hover,
         nextState.officialRanks[existingIdx] = nextState.officialRanks[slotIdx];
       }
       nextState.officialRanks[slotIdx] = newDrinkId;
-      await persistState(nextState);
+      await persistConfigState(nextState);
       showToast(`已更新第 ${slotIdx + 1} 名官方得獎飲品`, 'success');
     };
 
     window.randomizeOfficialRanking = async function() {
       const nextState = JSON.parse(JSON.stringify(appState));
       nextState.officialRanks = [...nextState.drinks].sort(() => Math.random() - 0.5).map(d => d.id);
-      await persistState(nextState);
+      await persistConfigState(nextState);
       showToast('已隨機排定官方名次順序！', 'success');
     };
 
@@ -2118,7 +2369,7 @@ button.btn-primary-theme:hover,
           const nextState = JSON.parse(JSON.stringify(appState));
           nextState.revealedRanks.push(r);
           if (!nextState.isLocked) nextState.isLocked = true;
-          await persistState(nextState);
+          await persistConfigState(nextState);
           const drink = nextState.drinks.find(d => d.id === nextState.officialRanks[r - 1]);
           showToast(`榮耀揭曉！第 ${r} 名：${drink ? drink.name : ''}`, 'success');
           return;
@@ -2131,7 +2382,7 @@ button.btn-primary-theme:hover,
       const idx = nextState.revealedRanks.indexOf(rankNum);
       if (idx === -1) nextState.revealedRanks.push(rankNum);
       else nextState.revealedRanks.splice(idx, 1);
-      await persistState(nextState);
+      await persistConfigState(nextState);
     };
 
     window.revealAllRanks = async function() {
@@ -2140,14 +2391,14 @@ button.btn-primary-theme:hover,
       for (let r = nextState.drinks.length; r >= 1; r--) all.push(r);
       nextState.revealedRanks = all;
       nextState.isLocked = true;
-      await persistState(nextState);
+      await persistConfigState(nextState);
       showToast('已揭曉全部官方名次！', 'success');
     };
 
     window.hideAllRanks = async function() {
       const nextState = JSON.parse(JSON.stringify(appState));
       nextState.revealedRanks = [];
-      await persistState(nextState);
+      await persistConfigState(nextState);
       showToast('已隱藏所有揭曉狀態', 'info');
     };
 
@@ -2155,7 +2406,7 @@ button.btn-primary-theme:hover,
       const nextState = JSON.parse(JSON.stringify(appState));
       nextState.bonus.points = Number(document.getElementById('admin-bonus-points').value || 0);
       nextState.bonus.mode = document.getElementById('admin-bonus-mode').value;
-      await persistState(nextState);
+      await persistConfigState(nextState);
     };
 
     window.toggleManualBonusPlayer = async function(playerId) {
@@ -2165,7 +2416,7 @@ button.btn-primary-theme:hover,
       if (idx === -1) list.push(playerId);
       else list.splice(idx, 1);
       nextState.bonus.manualPlayerIds = list;
-      await persistState(nextState);
+      await persistConfigState(nextState);
     };
 
     window.toggleApplyBonus = async function(apply) {
@@ -2175,7 +2426,7 @@ button.btn-primary-theme:hover,
       nextState.bonus.points = pts;
       nextState.bonus.mode = mode;
       nextState.bonus.applied = apply;
-      await persistState(nextState);
+      await persistConfigState(nextState);
       showToast(apply ? `已成功為最高分玩家頒發 +${pts} 額外加分！` : '已取消額外加分', apply ? 'success' : 'info');
     };
 
@@ -2185,7 +2436,7 @@ button.btn-primary-theme:hover,
       nextState.scoring.exact = Number(document.getElementById('score-exact').value || 0);
       nextState.scoring.diff1 = Number(document.getElementById('score-diff1').value || 0);
       nextState.scoring.diff2 = Number(document.getElementById('score-diff2').value || 0);
-      await persistState(nextState);
+      await persistConfigState(nextState);
       if (showNotification) showToast('活動標題與計分規則已儲存！', 'success');
     };
 
@@ -2194,19 +2445,19 @@ button.btn-primary-theme:hover,
         'VIP桌-林經理', '茶飲達人小美', '波霸控阿傑', 'A3桌-陳總監',
         '手搖飲品鑑師', 'B1桌-張小姐', '奶蓋狂熱者', '微糖去冰派'
       ];
-      const nextState = JSON.parse(JSON.stringify(appState));
-      const drinkIds = nextState.drinks.map(d => d.id);
+      const drinkIds = appState.drinks.map(d => d.id);
+      const updates = {};
 
       mockNames.forEach((name, idx) => {
         const mockId = 'mock_player_' + (idx + 1);
         let preds = [...drinkIds].sort(() => Math.random() - 0.5);
         if (idx === 0) {
-          preds = [...nextState.officialRanks];
+          preds = [...appState.officialRanks];
         } else if (idx === 1 && preds.length >= 2) {
-          preds = [...nextState.officialRanks];
+          preds = [...appState.officialRanks];
           [preds[0], preds[1]] = [preds[1], preds[0]];
         }
-        nextState.players[mockId] = {
+        updates[`players/${mockId}`] = {
           id: mockId,
           name,
           predictions: preds,
@@ -2214,15 +2465,17 @@ button.btn-primary-theme:hover,
         };
       });
 
-      await persistState(nextState);
-      showToast('已產生 8 位模擬來賓預測數據！', 'success');
+      if (rtdb && ceremonyRootRef) {
+        await update(ceremonyRootRef, updates);
+        showToast('已產生 8 位模擬來賓預測數據！', 'success');
+      }
     };
 
     window.deletePlayer = async function(playerId) {
-      const nextState = JSON.parse(JSON.stringify(appState));
-      delete nextState.players[playerId];
-      await persistState(nextState);
-      showToast('已移除該位玩家資料', 'info');
+      if (rtdb) {
+        await remove(ref(rtdb, `golden_brew_awards/live_session/players/${playerId}`));
+        showToast('已移除該位玩家資料', 'info');
+      }
     };
 
     window.confirmResetAll = function() {
@@ -2232,7 +2485,9 @@ button.btn-primary-theme:hover,
         async () => {
           localGuestSlots = new Array(INITIAL_STATE.drinks.length).fill(null);
           hasLoadedInitialGuestSlots = false;
-          await persistState(JSON.parse(JSON.stringify(INITIAL_STATE)));
+          if (rtdb && ceremonyRootRef) {
+            await set(ceremonyRootRef, JSON.parse(JSON.stringify(INITIAL_STATE)));
+          }
           showToast('已完整重置典禮比賽資料！', 'success');
         }
       );
@@ -2343,176 +2598,8 @@ button.btn-primary-theme:hover,
     window.addEventListener('DOMContentLoaded', () => {
       applyThemeStyles(appState.theme);
       switchView('guest');
-      initSyncEngine();
+      initFirebaseSync();
     });
   </script>
-  <script>
-(function () {
-  // 1. 建立獨立三區配色控制面板 HTML
-  const panelHTML = `
-    <div id="customThemePanel" style="background: rgba(15, 23, 42, 0.75); color: #f8fafc; border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 18px; margin: 16px 0; text-align: left; box-shadow: 0 8px 24px rgba(0,0,0,0.25);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <h3 style="margin: 0; font-size: 16px; font-weight: 700;">🎨 獨立三區主題配色（背景 / Header / 按鈕）</h3>
-        <button type="button" onclick="resetThreePartTheme()" style="background:rgba(255,255,255,0.15); color:#fff; border:none; padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer;">重設預設色</button>
-      </div>
-
-      <!-- 1. 頁面背景 -->
-      <div style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.12);">
-        <div style="font-weight: 600; margin-bottom: 6px; font-size: 14px;">1. 頁面背景（Page Background）</div>
-        <label style="margin-right: 12px; font-size: 13px;"><input type="radio" name="pageBgMode" value="solid" onchange="applyThreePartTheme()"> 單色</label>
-        <label style="font-size: 13px;"><input type="radio" name="pageBgMode" value="gradient" checked onchange="applyThreePartTheme()"> 雙色漸層</label>
-        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px; flex-wrap: wrap; font-size: 13px;">
-          <label>主色 <input type="color" id="pageBgColor1" value="#064e3b" oninput="applyThreePartTheme()"></label>
-          <label id="pageBgColor2Wrap">副色 <input type="color" id="pageBgColor2" value="#022c22" oninput="applyThreePartTheme()"></label>
-          <label id="pageBgAngleWrap">角度
-            <select id="pageBgAngle" onchange="applyThreePartTheme()" style="color:#111; background:#fff; padding:2px 6px; border-radius:4px;">
-              <option value="135deg">135° 對角</option>
-              <option value="180deg">180° 上下</option>
-              <option value="90deg">90° 左右</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
-      <!-- 2. Header Bar -->
-      <div style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.12);">
-        <div style="font-weight: 600; margin-bottom: 6px; font-size: 14px;">2. 頂部導覽列（Header Bar）</div>
-        <label style="margin-right: 12px; font-size: 13px;"><input type="radio" name="headerBgMode" value="solid" checked onchange="applyThreePartTheme()"> 單色</label>
-        <label style="font-size: 13px;"><input type="radio" name="headerBgMode" value="gradient" onchange="applyThreePartTheme()"> 雙色漸層</label>
-        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px; flex-wrap: wrap; font-size: 13px;">
-          <label>底色1 <input type="color" id="headerColor1" value="#0f172a" oninput="applyThreePartTheme()"></label>
-          <label id="headerColor2Wrap" style="display:none;">底色2 <input type="color" id="headerColor2" value="#1e293b" oninput="applyThreePartTheme()"></label>
-          <label>文字色 <input type="color" id="headerTextColor" value="#ffffff" oninput="applyThreePartTheme()"></label>
-        </div>
-      </div>
-
-      <!-- 3. 主要按鈕 -->
-      <div>
-        <div style="font-weight: 600; margin-bottom: 6px; font-size: 14px;">3. 主要按鈕（Buttons）</div>
-        <label style="margin-right: 12px; font-size: 13px;"><input type="radio" name="btnBgMode" value="solid" checked onchange="applyThreePartTheme()"> 單色</label>
-        <label style="font-size: 13px;"><input type="radio" name="btnBgMode" value="gradient" onchange="applyThreePartTheme()"> 雙色漸層</label>
-        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px; flex-wrap: wrap; font-size: 13px;">
-          <label>按鈕色1 <input type="color" id="btnColor1" value="#d97706" oninput="applyThreePartTheme()"></label>
-          <label id="btnColor2Wrap" style="display:none;">按鈕色2 <input type="color" id="btnColor2" value="#f59e0b" oninput="applyThreePartTheme()"></label>
-          <label>按鈕字色 <input type="color" id="btnTextColor" value="#ffffff" oninput="applyThreePartTheme()"></label>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // 2. 自動尋找後台區塊並插入面板（找不到時自動附在後台最上方）
-  function injectThemePanel() {
-    if (document.getElementById('customThemePanel')) return;
-    const candidates = Array.from(document.querySelectorAll('div, section'));
-    // 優先找原本包含「主題配色」或「飲品」設定的後台卡片
-    const target = candidates.find(el =>
-      el.offsetParent !== null &&
-      (el.textContent.includes('主題配色') || el.textContent.includes('產生 8 位模擬來賓') || el.textContent.includes('鎖定預測'))
-    );
-    if (target) {
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = panelHTML;
-      target.parentNode.insertBefore(wrapper.firstElementChild, target);
-      loadSavedThreePartTheme();
-    }
-  }
-
-  // 3. 套用三區顏色
-  window.applyThreePartTheme = function (save = true) {
-    const panel = document.getElementById('customThemePanel');
-    if (!panel) return;
-    const root = document.documentElement;
-    document.body.classList.add('custom-theme-active');
-
-    const pageMode = panel.querySelector('input[name="pageBgMode"]:checked')?.value || 'gradient';
-    const p1 = document.getElementById('pageBgColor1').value;
-    const p2 = document.getElementById('pageBgColor2').value;
-    const pAngle = document.getElementById('pageBgAngle').value;
-    document.getElementById('pageBgColor2Wrap').style.display = pageMode === 'gradient' ? 'inline-block' : 'none';
-    document.getElementById('pageBgAngleWrap').style.display = pageMode === 'gradient' ? 'inline-block' : 'none';
-    root.style.setProperty('--page-bg', pageMode === 'gradient' ? `linear-gradient(${pAngle}, ${p1}, ${p2})` : p1);
-
-    const headerMode = panel.querySelector('input[name="headerBgMode"]:checked')?.value || 'solid';
-    const h1 = document.getElementById('headerColor1').value;
-    const h2 = document.getElementById('headerColor2').value;
-    const hText = document.getElementById('headerTextColor').value;
-    document.getElementById('headerColor2Wrap').style.display = headerMode === 'gradient' ? 'inline-block' : 'none';
-    root.style.setProperty('--header-bg', headerMode === 'gradient' ? `linear-gradient(90deg, ${h1}, ${h2})` : h1);
-    root.style.setProperty('--header-text', hText);
-
-    const btnMode = panel.querySelector('input[name="btnBgMode"]:checked')?.value || 'solid';
-    const b1 = document.getElementById('btnColor1').value;
-    const b2 = document.getElementById('btnColor2').value;
-    const bText = document.getElementById('btnTextColor').value;
-    document.getElementById('btnColor2Wrap').style.display = btnMode === 'gradient' ? 'inline-block' : 'none';
-    root.style.setProperty('--btn-bg', btnMode === 'gradient' ? `linear-gradient(135deg, ${b1}, ${b2})` : b1);
-    root.style.setProperty('--btn-text', bText);
-
-    document.querySelectorAll('button').forEach(btn => {
-      if (btn.closest('#customThemePanel')) return;
-      const txt = btn.textContent || '';
-      if (/送出|揭曉|加分|新增|儲存|套用|產生|鎖定|解除/.test(txt)) {
-        btn.classList.add('btn-primary-theme');
-      }
-    });
-
-    if (save) {
-      localStorage.setItem('customThreePartTheme', JSON.stringify({
-        pageMode, p1, p2, pAngle, headerMode, h1, h2, hText, btnMode, b1, b2, bText
-      }));
-    }
-  };
-
-  window.resetThreePartTheme = function () {
-    localStorage.removeItem('customThreePartTheme');
-    document.body.classList.remove('custom-theme-active');
-    location.reload();
-  };
-
-  function loadSavedThreePartTheme() {
-    const saved = localStorage.getItem('customThreePartTheme');
-    if (!saved) return;
-    try {
-      const t = JSON.parse(saved);
-      const panel = document.getElementById('customThemePanel');
-      if (!panel) return;
-      panel.querySelector(`input[name="pageBgMode"][value="${t.pageMode}"]`).checked = true;
-      document.getElementById('pageBgColor1').value = t.p1;
-      document.getElementById('pageBgColor2').value = t.p2;
-      document.getElementById('pageBgAngle').value = t.pAngle;
-      panel.querySelector(`input[name="headerBgMode"][value="${t.headerMode}"]`).checked = true;
-      document.getElementById('headerColor1').value = t.h1;
-      document.getElementById('headerColor2').value = t.h2;
-      document.getElementById('headerTextColor').value = t.hText;
-      panel.querySelector(`input[name="btnBgMode"][value="${t.btnMode}"]`).checked = true;
-      document.getElementById('btnColor1').value = t.b1;
-      document.getElementById('btnColor2').value = t.b2;
-      document.getElementById('btnTextColor').value = t.bText;
-      applyThreePartTheme(false);
-    } catch (e) {}
-  }
-
-  // 一進頁面就先還原背景/Header/按鈕顏色（即使還沒進後台也生效）
-  window.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem('customThreePartTheme');
-    if (saved) {
-      try {
-        const t = JSON.parse(saved);
-        const root = document.documentElement;
-        document.body.classList.add('custom-theme-active');
-        root.style.setProperty('--page-bg', t.pageMode === 'gradient' ? `linear-gradient(${t.pAngle}, ${t.p1}, ${t.p2})` : t.p1);
-        root.style.setProperty('--header-bg', t.headerMode === 'gradient' ? `linear-gradient(90deg, ${t.h1}, ${t.h2})` : t.h1);
-        root.style.setProperty('--header-text', t.hText);
-        root.style.setProperty('--btn-bg', t.btnMode === 'gradient' ? `linear-gradient(135deg, ${t.b1}, ${t.b2})` : t.b1);
-        root.style.setProperty('--btn-text', t.bText);
-      } catch (e) {}
-    }
-    // 監聽畫面切換，當輸入密碼進入後台時自動把新調色盤插進去
-    const observer = new MutationObserver(() => injectThemePanel());
-    observer.observe(document.body, { childList: true, subtree: true });
-    injectThemePanel();
-  });
-})();
-</script>
 </body>
 </html>
