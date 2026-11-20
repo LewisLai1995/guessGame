@@ -1521,6 +1521,7 @@
     function renderAllViews() {
       const title = appState.eventTitle || INITIAL_STATE.eventTitle;
       document.getElementById('header-event-title').textContent = title;
+      document.title = `${title}`;
       // 同步左上角自訂 Logo 或預設冠軍獎盃
       const logoData = appState.eventLogo || '';
       const defaultIconBox = document.getElementById('header-default-icon-box');
