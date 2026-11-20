@@ -293,6 +293,50 @@
     <!-- 1. 來賓預測端 (GUEST VIEW)                                              -->
     <!-- ===================================================================== -->
     <section id="view-guest" class="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
+      <!-- 頒獎典禮倒數計時橫幅 -->
+      <div id="guest-countdown-banner" class="hidden mb-4 sm:mb-5 rounded-2xl ceremony-theme-bg text-[#FAF7F0] px-4 py-3.5 sm:px-6 sm:py-4 border ceremony-accent-border shadow-lg">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-black/30 border ceremony-accent-border flex items-center justify-center ceremony-accent-text shrink-0">
+              <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <div>
+              <div class="text-xs sm:text-sm font-bold ceremony-accent-text flex items-center gap-1.5">
+                <span id="countdown-label-text">距離頒獎典禮開始倒數</span>
+              </div>
+              <div id="countdown-target-display" class="text-[11px] text-white/70 mt-0.5"></div>
+            </div>
+          </div>
+
+          <!-- 倒數數字方塊區 -->
+          <div id="countdown-boxes" class="flex items-center justify-center sm:justify-end gap-1.5 sm:gap-2">
+            <div class="bg-black/35 border border-white/15 rounded-xl px-2.5 py-1.5 min-w-[52px] text-center">
+              <div id="cd-days" class="font-display font-black text-base sm:text-xl ceremony-accent-text leading-none">00</div>
+              <div class="text-[10px] text-white/65 mt-1">天</div>
+            </div>
+            <span class="ceremony-accent-text font-bold">:</span>
+            <div class="bg-black/35 border border-white/15 rounded-xl px-2.5 py-1.5 min-w-[52px] text-center">
+              <div id="cd-hours" class="font-display font-black text-base sm:text-xl ceremony-accent-text leading-none">00</div>
+              <div class="text-[10px] text-white/65 mt-1">時</div>
+            </div>
+            <span class="ceremony-accent-text font-bold">:</span>
+            <div class="bg-black/35 border border-white/15 rounded-xl px-2.5 py-1.5 min-w-[52px] text-center">
+              <div id="cd-mins" class="font-display font-black text-base sm:text-xl ceremony-accent-text leading-none">00</div>
+              <div class="text-[10px] text-white/65 mt-1">分</div>
+            </div>
+            <span class="ceremony-accent-text font-bold">:</span>
+            <div class="bg-black/35 border border-white/15 rounded-xl px-2.5 py-1.5 min-w-[52px] text-center">
+              <div id="cd-secs" class="font-display font-black text-base sm:text-xl text-white leading-none">00</div>
+              <div class="text-[10px] text-white/65 mt-1">秒</div>
+            </div>
+          </div>
+
+          <!-- 倒數結束後的提示徽章 -->
+          <div id="countdown-live-badge" class="hidden px-4 py-2 rounded-xl gold-gradient-bg text-slate-950 font-extrabold text-xs sm:text-sm text-center shadow">
+            <i class="fa-solid fa-champagne-glasses mr-1.5"></i>頒獎典禮盛大進行中！
+          </div>
+        </div>
+      </div>
       <!-- 狀態橫幅 -->
       <div class="ceremony-theme-bg text-[#FAF7F0] rounded-2xl p-4 sm:p-6 mb-5 sm:mb-6 ceremony-accent-border border shadow-xl relative overflow-hidden">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
@@ -700,6 +744,29 @@
                     class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-sm font-bold text-slate-900">
                 </div>
                 <div class="sm:col-span-2 bg-stone-50 p-3 rounded-xl border border-stone-200">
+                  <div class="flex items-center justify-between mb-2">
+                    <label class="text-xs font-bold text-slate-700">
+                      <i class="fa-solid fa-clock text-amber-600 mr-1"></i>頒獎典禮日期時間（來賓端倒數計時）
+                    </label>
+                    <label class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                      <input type="checkbox" id="admin-countdown-enabled" onchange="saveGeneralSettings(true)" class="rounded accent-amber-600">
+                      <span>顯示倒數計時器</span>
+                    </label>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label class="block text-[11px] text-slate-500 mb-1">頒獎開始日期與時間</label>
+                      <input type="datetime-local" id="admin-ceremony-time-input" onchange="saveGeneralSettings(true)"
+                        class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-600">
+                    </div>
+                    <div>
+                      <label class="block text-[11px] text-slate-500 mb-1">倒數提示標語</label>
+                      <input type="text" id="admin-countdown-label-input" placeholder="例如：距離頒獎典禮開始倒數" onchange="saveGeneralSettings()"
+                        class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-amber-600">
+                    </div>
+                  </div>
+                </div>
+                <div class="sm:col-span-2 bg-stone-50 p-3 rounded-xl border border-stone-200">
                   <div class="flex items-center justify-between mb-1.5">
                     <label class="text-xs font-bold text-slate-700">
                       <i class="fa-solid fa-image text-amber-600 mr-1"></i>活動左上角專屬 Logo
@@ -1065,6 +1132,9 @@
     const INITIAL_STATE = {
       eventTitle: '金萃大賞｜年度飲品頒獎典禮',
       eventLogo: '',
+      ceremonyTime: '',
+      countdownEnabled: true,
+      countdownLabel: '距離頒獎典禮開始倒數',
       isLocked: false,
       drinks: JSON.parse(JSON.stringify(DEFAULT_DRINKS)),
       officialRanks: ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'],
@@ -1263,6 +1333,9 @@
           await update(ceremonyRootRef, {
             eventTitle: newState.eventTitle,
             eventLogo: newState.eventLogo || '',
+            ceremonyTime: newState.ceremonyTime || '',
+            countdownEnabled: newState.countdownEnabled !== false,
+            countdownLabel: newState.countdownLabel || '距離頒獎典禮開始倒數',
             isLocked: newState.isLocked,
             drinks: newState.drinks,
             officialRanks: newState.officialRanks,
@@ -2152,6 +2225,16 @@
       }
 
       document.getElementById('admin-event-title-input').value = appState.eventTitle;
+      const cdCheck = document.getElementById('admin-countdown-enabled');
+      const cdTimeInput = document.getElementById('admin-ceremony-time-input');
+      const cdLabelInput = document.getElementById('admin-countdown-label-input');
+      if (cdCheck) cdCheck.checked = appState.countdownEnabled !== false;
+      if (cdTimeInput && document.activeElement !== cdTimeInput) {
+        cdTimeInput.value = appState.ceremonyTime || '';
+      }
+      if (cdLabelInput && document.activeElement !== cdLabelInput) {
+        cdLabelInput.value = appState.countdownLabel || '距離頒獎典禮開始倒數';
+      }
       document.getElementById('score-exact').value = appState.scoring.exact;
       document.getElementById('score-diff1').value = appState.scoring.diff1;
       document.getElementById('score-diff2').value = appState.scoring.diff2;
@@ -2626,6 +2709,9 @@
     window.saveGeneralSettings = async function(showNotification = false) {
       const nextState = JSON.parse(JSON.stringify(appState));
       nextState.eventTitle = document.getElementById('admin-event-title-input').value.trim() || INITIAL_STATE.eventTitle;
+      nextState.countdownEnabled = document.getElementById('admin-countdown-enabled')?.checked ?? true;
+      nextState.ceremonyTime = document.getElementById('admin-ceremony-time-input')?.value || '';
+      nextState.countdownLabel = document.getElementById('admin-countdown-label-input')?.value.trim() || '距離頒獎典禮開始倒數';
       nextState.scoring.exact = Number(document.getElementById('score-exact').value || 0);
       nextState.scoring.diff1 = Number(document.getElementById('score-diff1').value || 0);
       nextState.scoring.diff2 = Number(document.getElementById('score-diff2').value || 0);
@@ -2828,7 +2914,62 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
+  function updateCountdownDisplay() {
+      const banner = document.getElementById('guest-countdown-banner');
+      if (!banner) return;
 
+      const isEnabled = appState.countdownEnabled !== false;
+      const targetStr = appState.ceremonyTime;
+
+      if (!isEnabled || !targetStr) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      const targetDate = new Date(targetStr);
+      if (isNaN(targetDate.getTime())) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      banner.classList.remove('hidden');
+      document.getElementById('countdown-label-text').textContent = appState.countdownLabel || '距離頒獎典禮開始倒數';
+
+      // 格式化顯示目標日期時間
+      const formattedTarget = targetDate.toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      document.getElementById('countdown-target-display').textContent = `典禮時間：${formattedTarget}`;
+
+      const now = Date.now();
+      const diff = targetDate.getTime() - now;
+
+      const boxesEl = document.getElementById('countdown-boxes');
+      const liveBadgeEl = document.getElementById('countdown-live-badge');
+
+      if (diff <= 0) {
+        boxesEl.classList.add('hidden');
+        liveBadgeEl.classList.remove('hidden');
+      } else {
+        boxesEl.classList.remove('hidden');
+        liveBadgeEl.classList.add('hidden');
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((diff / 1000 / 60) % 60);
+        const secs = Math.floor((diff / 1000) % 60);
+
+        document.getElementById('cd-days').textContent = String(days).padStart(2, '0');
+        document.getElementById('cd-hours').textContent = String(hours).padStart(2, '0');
+        document.getElementById('cd-mins').textContent = String(mins).padStart(2, '0');
+        document.getElementById('cd-secs').textContent = String(secs).padStart(2, '0');
+      }
+    }
     window.addEventListener('DOMContentLoaded', () => {
       applyThemeStyles(appState.theme);
       switchView('guest');
