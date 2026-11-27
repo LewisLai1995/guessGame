@@ -2276,22 +2276,27 @@
 
       syncThreeZoneThemeInputs(appState.theme);
 
+      // 飲品編輯器（支援增減與描述編輯）
       document.getElementById('admin-drinks-count').textContent = totalDrinks;
       const editorEl = document.getElementById('admin-drinks-editor');
       editorEl.innerHTML = '';
       appState.drinks.forEach((drink, idx) => {
         editorEl.innerHTML += `
-          <div class="grid grid-cols-12 gap-2 items-center bg-stone-50 p-2 rounded-xl border border-stone-200">
-            <input type="text" id="edit-drink-icon-${idx}" value="${escapeHtml(drink.icon || '🥤')}" title="圖示 Emoji"
-              class="col-span-2 px-1.5 py-1.5 rounded-lg border border-slate-300 bg-white text-center text-base">
-            <input type="text" id="edit-drink-name-${idx}" value="${escapeHtml(drink.name)}" placeholder="飲品名稱"
-              class="col-span-5 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900">
-            <input type="text" id="edit-drink-tag-${idx}" value="${escapeHtml(drink.tag || '')}" placeholder="特色標籤"
-              class="col-span-4 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-600">
-            <button onclick="removeDrinkItem('${drink.id}')" title="刪除此飲品"
-              class="col-span-1 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition">
-              <i class="fa-solid fa-trash-can text-xs"></i>
-            </button>
+          <div class="bg-stone-50 p-2.5 rounded-xl border border-stone-200 space-y-2">
+            <div class="grid grid-cols-12 gap-2 items-center">
+              <input type="text" id="edit-drink-icon-${idx}" value="${escapeHtml(drink.icon || '🥤')}" title="圖示 Emoji"
+                class="col-span-2 px-1.5 py-1.5 rounded-lg border border-slate-300 bg-white text-center text-base">
+              <input type="text" id="edit-drink-name-${idx}" value="${escapeHtml(drink.name)}" placeholder="飲品名稱"
+                class="col-span-5 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900">
+              <input type="text" id="edit-drink-tag-${idx}" value="${escapeHtml(drink.tag || '')}" placeholder="特色標籤"
+                class="col-span-4 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-600">
+              <button onclick="removeDrinkItem('${drink.id}')" title="刪除此飲品"
+                class="col-span-1 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition">
+                <i class="fa-solid fa-trash-can text-xs"></i>
+              </button>
+            </div>
+            <input type="text" id="edit-drink-desc-${idx}" value="${escapeHtml(drink.desc || '')}" placeholder="飲品風味與特色描述（顯示於來賓端介紹卡片）"
+              class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-700 focus:outline-none focus:border-amber-600">
           </div>
         `;
       });
@@ -2529,9 +2534,11 @@
         const iconEl = document.getElementById(`edit-drink-icon-${idx}`);
         const nameEl = document.getElementById(`edit-drink-name-${idx}`);
         const tagEl = document.getElementById(`edit-drink-tag-${idx}`);
+        const descEl = document.getElementById(`edit-drink-desc-${idx}`);
         if (iconEl && iconEl.value.trim()) drink.icon = iconEl.value.trim();
         if (nameEl && nameEl.value.trim()) drink.name = nameEl.value.trim();
         if (tagEl) drink.tag = tagEl.value.trim();
+        if (descEl) drink.desc = descEl.value.trim();
       });
     }
 
